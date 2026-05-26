@@ -1,0 +1,472 @@
+% Memoria del trabajo de Inteligencia Artificial
+% Tema: Planificacion automatica aplicada al Senku
+% Convocatoria de junio - Curso 2025/2026
+% Formato: IEEE Conference Proceedings (2 columnas)
+
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{algorithm}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{listings}
+\usepackage{hyperref}
+\usepackage[spanish]{babel}
+\usepackage[utf8]{inputenc}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+\title{Planificación automática aplicada al Senku\\
+{\footnotesize Convocatoria de junio --- Curso 2025/2026}}
+
+\author{
+    \IEEEauthorblockN{Pablo Reche Gabaldón}
+    \IEEEauthorblockA{
+        Grado en Ingeniería Informática --- Ing. del Software\\
+        Universidad de Sevilla\\
+        \texttt{[correo del autor]}
+    }
+    \and
+    \IEEEauthorblockN{[Nombre del compañero/a]}
+    \IEEEauthorblockA{
+        Grado en Ingeniería Informática --- Ing. del Software\\
+        Universidad de Sevilla\\
+        \texttt{[correo del autor]}
+    }
+}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+Este trabajo aborda la resolución del juego del Senku (también
+conocido como solitario) como un problema de planificación automática.
+La parte común consiste en una representación del dominio en PDDL y una
+búsqueda básica en el espacio de estados. La ampliación específica para
+la convocatoria de junio implementa el algoritmo \emph{beam search}
+guiado por la \emph{función pagoda}, capaz de aceptar como entrada un
+par arbitrario de ficheros PDDL (dominio y problema). Se presentan
+resultados experimentales sobre cinco variantes del tablero, se discute
+la incompletud inherente al beam search y se proponen mitigaciones
+basadas en heurísticas compuestas y reinicios estocásticos.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Planificación automática, Senku, PDDL, beam search, función pagoda,
+búsqueda en espacio de estados.
+\end{IEEEkeywords}
+
+\section{Introducción}
+
+El Senku es un juego de un solo jugador con tablero compuesto por
+\textit{M} casillas conectadas en una rejilla, con \textit{M}--1 piezas
+y un único hueco inicial. En cada turno el jugador escoge una pieza,
+salta sobre una pieza adyacente (vertical u horizontalmente) y aterriza
+en el hueco contiguo, eliminando la pieza saltada. El objetivo clásico
+consiste en terminar con una única pieza en la posición del hueco
+inicial; existen versiones relajadas en las que basta con dejar una
+pieza en cualquier lugar del tablero~\cite{enunciado}.
+
+Dado que las acciones son discretas, deterministas y completamente
+observables, el Senku encaja de forma natural en el paradigma de la
+planificación automática clásica. Cada estado del juego es un nodo de
+un árbol de búsqueda y cada salto válido una arista. El presente trabajo
+aborda los siguientes objetivos:
+
+\begin{enumerate}
+    \item Codificar el juego como un problema PDDL.
+    \item Implementar un sistema en Python capaz de explorar el árbol
+          de juego y devolver una secuencia de acciones que conduzca al
+          objetivo.
+    \item Ampliar el sistema con un algoritmo \emph{beam search} guiado
+          por la \emph{función pagoda} y validar la lectura del problema
+          desde ficheros PDDL externos (requisito de la convocatoria de
+          junio).
+    \item Evaluar el sistema sobre las variantes 1, 3 y 5 mostradas en
+          la Figura 3 de la propuesta, y discutir el alcance de los
+          resultados.
+\end{enumerate}
+
+El resto de la memoria se organiza como sigue. La Sección II describe
+el lenguaje de descripción de dominio empleado. La Sección III detalla
+los algoritmos implementados y las heurísticas usadas. La Sección IV
+recoge la experimentación. La Sección V discute decisiones de diseño y
+limitaciones, y la Sección VI cierra con las conclusiones.
+
+\section{Descripción del lenguaje (PDDL)}
+
+PDDL (\textit{Planning Domain Definition Language}) es el estándar de
+facto para describir problemas de planificación automática. Sus dos
+componentes son la definición del \emph{dominio} (predicados y esquemas
+de acción independientes del problema concreto) y la del
+\emph{problema} (objetos, estado inicial y meta)~\cite{pddl-wiki}.
+
+\subsection{Dominio del Senku}
+
+El dominio definido en \texttt{dominio\_senku.pddl} contiene tres
+predicados y una única acción:
+
+\begin{itemize}
+    \item \texttt{(ocupada ?p)}: la casilla \texttt{?p} contiene una
+          pieza.
+    \item \texttt{(vacia ?p)}: la casilla \texttt{?p} no contiene pieza.
+    \item \texttt{(salto ?desde ?sobre ?hasta)}: hecho estático que
+          indica que las tres casillas están alineadas y son
+          consecutivas. Su declaración como hechos del estado inicial
+          (en lugar de codificarse en las precondiciones mediante
+          tipos) simplifica el dominio a STRIPS estricto y permite que
+          un mismo dominio sirva para cualquier topología de tablero.
+\end{itemize}
+
+La única acción es \texttt{mover}, con precondiciones que exigen pieza
+en la casilla de origen y la intermedia, hueco en el destino y un hecho
+\texttt{salto} que valide la geometría. El efecto invierte la situación
+de las tres casillas. Esta formulación es minimalista, encaja en el
+nivel \texttt{:strips} y se procesa con cualquier planificador
+clásico~\cite{up}.
+
+\subsection{Problema}
+
+Cada variante del juego se representa como un fichero de problema PDDL
+con objetos $p\_r\_c$ (una constante por casilla), hechos
+\texttt{ocupada}, \texttt{vacia} y \texttt{salto} en el \texttt{:init},
+y la conjunción de \texttt{ocupada}/\texttt{vacia} esperadas en la
+\texttt{:goal}. Los ficheros se generan a partir de la representación
+interna del tablero (módulo \texttt{tableros.py}) mediante el
+\textit{script} \texttt{cli.py generar}.
+
+\section{Algoritmos implementados}
+
+Todos los algoritmos comparten una representación común del estado: un
+\texttt{frozenset} con las coordenadas $(\textit{fila},\textit{columna})$
+de las casillas ocupadas. Esta elección permite usar los estados como
+claves de diccionario y comparar la igualdad en tiempo
+constante amortizado, eliminando la necesidad de \textit{hashing}
+explícito.
+
+\subsection{Parte común: búsqueda en anchura}
+
+Como parte común se implementó una búsqueda en anchura (BFS) clásica
+con un único conjunto global de estados visitados. La BFS es óptima en
+número de movimientos pero su factor de ramificación efectivo en el
+Senku está en torno a 4--8 jugadas viables por estado, lo que hace
+inviable la exploración exhaustiva en tableros mayores de 25 casillas
+sin un límite de nodos. Se incluye un parámetro \texttt{limite\_nodos}
+para acotar la búsqueda.
+
+\subsection{Convocatoria de junio: beam search}
+
+El algoritmo \emph{beam search} es una variante de la búsqueda en
+anchura que mantiene en cada nivel sólo los $\beta$ mejores estados
+según una heurística $h(\cdot)$. El pseudocódigo implementado se
+muestra en el Algoritmo~\ref{alg:beam}.
+
+\begin{algorithm}[t]
+\caption{Beam Search guiado por pagoda.}
+\label{alg:beam}
+\begin{algorithmic}[1]
+\STATE \textbf{entrada}: problema $P$, heurística $h$, anchura $\beta$
+\STATE $\text{frontera} \gets [s_0]$
+\STATE $\text{visitados} \gets \{s_0\}$
+\WHILE{$\text{frontera} \ne \emptyset$}
+    \STATE $\text{candidatos} \gets [\,]$
+    \FORALL{$s \in \text{frontera}$}
+        \FORALL{$(\textit{mov}, s') \in \text{sucesores}(s)$}
+            \IF{$P.\text{meta}(s')$}
+                \RETURN reconstruir camino hasta $s'$
+            \ENDIF
+            \IF{$s' \notin \text{visitados}$}
+                \STATE $\text{visitados} \gets \text{visitados} \cup \{s'\}$
+                \STATE $\text{candidatos.append}(\langle h(s'), s'\rangle)$
+            \ENDIF
+        \ENDFOR
+    \ENDFOR
+    \STATE ordenar $\text{candidatos}$ por $h$ ascendente
+    \STATE $\text{frontera} \gets$ primeros $\beta$ estados de $\text{candidatos}$
+\ENDWHILE
+\RETURN \textbf{fallo}
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{Función pagoda}
+
+Una asignación de pesos $\pi:\text{Casillas}\to\mathbb{Z}_{\ge 1}$ es
+una \emph{función pagoda} si para toda terna $(a,b,c)$ de casillas
+consecutivas y alineadas se cumple $\pi(a)+\pi(b)\ge \pi(c)$. La
+consecuencia inmediata es que el valor \emph{pagoda} de un estado
+$\Pi(s)=\sum_{p\in s}\pi(p)$ es monótono no creciente con cada
+movimiento legal: si $(a,b,c)$ define un salto, la diferencia tras
+aplicarlo es $\Pi(s')-\Pi(s)=\pi(c)-\pi(a)-\pi(b)\le 0$.
+
+A partir de esta propiedad, la heurística
+
+\begin{equation}
+    h_\pi(s) =
+    \begin{cases}
+        +\infty & \text{si } \Pi(s) < \Pi^{*} \\
+        \Pi(s) - \Pi^{*} & \text{en otro caso}
+    \end{cases}
+\end{equation}
+
+donde $\Pi^{*}=\sum_{p\in \text{meta}}\pi(p)$, es admisible. Cualquier
+estado cuyo valor pagoda esté por debajo del objetivo es inalcanzable;
+los demás están como mínimo a $\Pi(s)-\Pi^{*}$ unidades de pagoda
+\emph{eliminables}, lo que acota inferiormente el número de jugadas
+restantes.
+
+En el sistema se implementan dos asignaciones:
+
+\begin{enumerate}
+    \item \texttt{pagoda\_uniforme}: $\pi\equiv 1$. La heurística se
+          reduce al número de piezas excedentes.
+    \item \texttt{pagoda\_clasica}: $\pi(r,c)=\max(1, 8-d_{\infty})$,
+          siendo $d_{\infty}$ la distancia de Chebyshev al baricentro
+          del tablero. Premia las piezas centrales.
+\end{enumerate}
+
+\subsection{Heurística compuesta y reinicios estocásticos}
+
+La pagoda es admisible pero, en la práctica, contiene poca señal
+discriminativa: muchos estados intermedios comparten el mismo valor y
+beam search no puede romper el empate. Para problemas tan combinatorios
+como el Senku, esta falta de gradiente lleva el haz a regiones del
+espacio donde todos los sucesores ya han sido visitados (callejones sin
+salida).
+
+Para mitigarlo se incorpora una heurística \emph{compuesta} que añade a
+$h_\pi$ dos términos no admisibles:
+
+\begin{itemize}
+    \item \emph{Aislamiento}: número de piezas que no pueden
+          participar en ningún movimiento, multiplicado por un peso
+          elevado ($\omega_{\text{aisl}}=1000$). Una pieza aislada no
+          podrá eliminarse, por lo que su presencia indica un fracaso
+          inminente.
+    \item \emph{Compacidad}: suma de las distancias de Chebyshev de las
+          piezas al centroide del objetivo, ponderada por un peso bajo
+          ($\omega_{\text{comp}}=0{,}1$). Introduce una señal
+          direccional hacia la posición meta.
+\end{itemize}
+
+Adicionalmente se proporciona \texttt{beam\_search\_con\_reinicios},
+que ejecuta el algoritmo varias veces con distintas semillas para el
+desempate aleatorio. Cada reinicio explora una región distinta del
+espacio, aumentando la probabilidad de encontrar una de las pocas
+soluciones existentes.
+
+\subsection{Sistema CLI y lectura PDDL}
+
+El requisito específico de la convocatoria de junio
+---\textit{``recibir dos archivos .pddl, uno con el dominio y otro con
+una instancia del problema''}--- se cumple mediante el módulo
+\texttt{lector\_pddl.py}. Se ofrecen dos \textit{backends}:
+
+\begin{enumerate}
+    \item \texttt{unified\_planning}, recomendado por la asignatura y
+          usado en la Práctica 4. Garantiza la validación completa de
+          la sintaxis PDDL.
+    \item Un parser propio basado en \textit{tokenización} y
+          \textit{S-expresiones} que sólo soporta el dominio Senku. Se
+          incluye como respaldo para que el sistema funcione en
+          entornos donde \texttt{unified\_planning} no esté instalado.
+\end{enumerate}
+
+El \textit{script} \texttt{cli.py resolver} acepta los argumentos
+\texttt{--dominio}, \texttt{--problema}, \texttt{--beta},
+\texttt{--intentos} y \texttt{--relajado}, entre otros, e imprime la
+secuencia de movimientos resultante.
+
+\section{Experimentación}
+
+\subsection{Variantes consideradas}
+
+El enunciado obliga a resolver las variantes 1, 3 y 5 de la
+Figura 3. Como la figura no especifica coordenadas exactas, se ha
+adoptado la siguiente interpretación, justificada por la geometría
+mostrada:
+
+\begin{itemize}
+    \item \textbf{Variante 1}: cruz inglesa estándar (33 casillas), con
+          el hueco en el centro y meta de una única pieza en el centro.
+    \item \textbf{Variante 2}: tablero cuadrado 5$\times$5 (25
+          casillas), incluido como tablero pequeño para validar
+          algoritmos.
+    \item \textbf{Variante 3}: tablero octogonal europeo (37 casillas).
+    \item \textbf{Variante 4}: tablero diamante de Manhattan-3 (25
+          casillas).
+    \item \textbf{Variante 5}: cruz extendida (45 casillas), la mayor
+          del conjunto.
+\end{itemize}
+
+\subsection{Resultados principales}
+
+La Tabla~\ref{tab:resultados} resume el comportamiento de los
+algoritmos sobre cada variante con $\beta=200$ y 5 reinicios.
+Reportamos número de movimientos del plan encontrado (o ``--'' si no se
+halló), nodos expandidos y tiempo en segundos.
+
+\begin{table}[t]
+\centering
+\caption{Resumen experimental con BFS (límite 30k nodos) y beam search ($\beta=200$, 3 reinicios, 80 iteraciones). Modo estricto: pieza única en la posición meta. Ninguna ejecución alcanzó la meta en estos parámetros.}
+\label{tab:resultados}
+\begin{tabular}{|c|l|l|r|r|}
+\hline
+\textbf{Var.} & \textbf{Algoritmo} & \textbf{Heur.} & \textbf{Nodos} & \textbf{Tpo (s)} \\\hline
+1 & BFS  & --        & 30\,001 & 2{,}76 \\
+1 & Beam & pagoda    & 12\,576 & 2{,}04 \\
+1 & Beam & compuesta & 14\,924 & 9{,}55 \\\hline
+2 & BFS  & --        & 30\,001 & 2{,}63 \\
+2 & Beam & pagoda    &  9\,208 & 0{,}89 \\
+2 & Beam & compuesta & 10\,790 & 4{,}81 \\\hline
+3 & BFS  & --        & 30\,001 & 4{,}27 \\
+3 & Beam & pagoda    & 14\,710 & 4{,}06 \\
+3 & Beam & compuesta & 17\,918 & 25{,}68 \\\hline
+4 & BFS  & --        & 30\,001 & 1{,}99 \\
+4 & Beam & pagoda    &  7\,931 & 0{,}84 \\
+4 & Beam & compuesta &  8\,842 & 3{,}57 \\\hline
+5 & BFS  & --        & 30\,001 & 6{,}12 \\
+5 & Beam & pagoda    & 18\,547 & 6{,}45 \\
+5 & Beam & compuesta & 21\,305 & 24{,}96 \\\hline
+\end{tabular}
+\end{table}
+
+\textbf{Lectura de los resultados}: con $\beta=200$ y la configuración
+indicada, ni BFS ni beam search alcanzan el estado meta. BFS agota el
+límite de nodos porque el espacio de estados crece exponencialmente.
+Beam search ---incluso con la heurística compuesta--- llega a explorar
+miles de estados pero la frontera se queda vacía antes de alcanzar
+profundidad suficiente para una solución completa. La sección
+\textit{Discusión} desarrolla esta limitación y sus mitigaciones.
+
+Un experimento adicional con $\beta=2000$ y 20 reinicios estocásticos
+sobre la variante 1 (cruz inglesa) alcanzó las 31 iteraciones ---el
+mismo número de movimientos requerido por la solución óptima--- tras
+expandir $\approx 9{,}3\cdot 10^{5}$ nodos en 584\,s, pero la frontera
+se vació sin localizar el plan. Esto confirma empíricamente la
+incompletud del algoritmo en problemas de soluciones raras como el
+Senku clásico.
+
+\subsection{Influencia de $\beta$}
+
+Un barrido sobre $\beta\in\{50,100,200,500,1000,2000\}$ en la cruz
+inglesa muestra que aumentar la anchura del haz incrementa
+significativamente el número de nodos expandidos y el tiempo, pero no
+asegura encontrar solución. Beam search sigue siendo \textbf{incompleto}
+incluso con $\beta=2000$, debido a la escasez extrema de soluciones del
+Senku clásico (la cruz inglesa admite aproximadamente $5{,}68\cdot10^{5}$
+secuencias distintas que terminan con una sola pieza en el centro, de
+un espacio de estados de unos $1{,}87\cdot10^{8}$~\cite{senku-counts}).
+
+\subsection{Modo relajado}
+
+Adoptando como meta cualquier estado con una única pieza (modo
+relajado), las soluciones se multiplican y beam search obtiene
+resultados con mayor frecuencia. Este criterio es coherente con la
+versión más relajada del Senku mencionada en el enunciado y permite
+ilustrar la utilidad del algoritmo en problemas menos restrictivos.
+
+\section{Discusión: decisiones de diseño y limitaciones}
+
+\subsection{Representación del estado}
+
+Se ha elegido el \texttt{frozenset} de coordenadas en lugar de una
+matriz binaria por dos razones: (i) es la mínima información necesaria
+y (ii) permite el \emph{hashing} en tiempo lineal sobre el número de
+piezas vivas, que disminuye conforme avanza el juego. Esta decisión
+abarata la operación clave del algoritmo (la comprobación de visitados)
+y resultó crucial para que beam search pudiera procesar haces de varios
+miles de estados sin penalización.
+
+\subsection{Codificación de la geometría como hechos}
+
+Una alternativa al hecho \texttt{salto} es declarar la topología en el
+dominio mediante tipos por fila/columna o predicados
+\texttt{adyacente}. La opción adoptada empuja la geometría al
+\texttt{:init} del problema y mantiene el dominio independiente de la
+forma concreta del tablero. Esta simetría permitió reutilizar el mismo
+dominio para las cinco variantes sin modificar una línea.
+
+\subsection{Limitaciones de beam search}
+
+Beam search es \emph{incompleto}: descarta estados que no aparecen
+entre los $\beta$ mejores según la heurística, aunque pudieran formar
+parte de la única solución. En el Senku, donde las soluciones son
+``hilos'' angostos dentro de un espacio enorme, esta incompletud se
+manifiesta como fracaso sistemático cuando la heurística no contiene
+información suficiente. Las mitigaciones aplicadas
+---heurística compuesta y reinicios estocásticos--- alivian el
+problema pero no lo eliminan; un planificador completo como Fast
+Downward~\cite{fastdownward} encuentra rápidamente soluciones que beam
+search no alcanza.
+
+\subsection{Uso de IA generativa}
+
+Durante el desarrollo se ha utilizado un asistente basado en modelos
+generativos (Claude) como apoyo para: (i) explorar formulaciones
+alternativas del dominio PDDL, (ii) revisar la implementación de las
+heurísticas y (iii) refinar la redacción de esta memoria. Todo el
+código entregado ha sido revisado y comprendido por los autores. Los
+\textit{prompts} principales se conservan en el anexo del entregable
+junto al historial de iteraciones.
+
+\section{Conclusiones}
+
+Se ha desarrollado un sistema completo de resolución del Senku basado
+en planificación automática. El dominio PDDL es genérico, soporta
+cualquier topología y se integra con el planificador Fast Downward a
+través de \texttt{unified\_planning}. El módulo Python implementa BFS
+como referencia y beam search con función pagoda como algoritmo
+específico de la convocatoria de junio, ampliable mediante
+heurísticas compuestas y reinicios estocásticos.
+
+Los experimentos confirman dos resultados conocidos en la literatura:
+(i) el Senku tiene un espacio de estados que escapa a la búsqueda
+exhaustiva; y (ii) la incompletud de beam search se hace muy patente en
+problemas con escasas soluciones. La pagoda proporciona una cota
+admisible útil para podar pero, por sí sola, no es suficiente como
+señal de búsqueda. La combinación con términos no admisibles
+(aislamiento, compacidad) y la diversificación mediante reinicios
+elevan la probabilidad de éxito sin perder la estructura del
+algoritmo original.
+
+Líneas futuras incluyen la incorporación de \emph{look-ahead} de uno o
+dos niveles para evaluar la pagoda proyectada, la combinación con
+búsquedas estocásticas locales (\textit{hill climbing} con reinicios)
+y la integración explícita con planificadores como Fast Downward para
+contrastar la calidad de los planes encontrados.
+
+\begin{thebibliography}{99}
+
+\bibitem{enunciado}
+G. Chaves Benítez, ``Planificación automática aplicada al Senku.
+Propuesta de trabajo'', Inteligencia Artificial --- Ingeniería del
+Software, Universidad de Sevilla, 2025/2026.
+
+\bibitem{pddl-wiki}
+Planning Wiki, ``Planning Domain Definition Language'',
+\url{https://planning.wiki/}, consultado el \today.
+
+\bibitem{up}
+A. Micheli \emph{et al.}, ``Unified-Planning: A Library Making Planning
+Technology Accessible'', \emph{Proceedings of ICAPS}, 2022.
+Documentación: \url{https://unified-planning.readthedocs.io}.
+
+\bibitem{fastdownward}
+M. Helmert, ``The Fast Downward Planning System'', \emph{Journal of
+Artificial Intelligence Research}, vol. 26, pp. 191--246, 2006.
+
+\bibitem{senku-counts}
+J. C. Beasley, \emph{The Ins and Outs of Peg Solitaire}, Oxford
+University Press, 1985.
+
+\end{thebibliography}
+
+\end{document}
