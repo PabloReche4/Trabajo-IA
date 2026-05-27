@@ -306,12 +306,49 @@ mostrada:
           del conjunto.
 \end{itemize}
 
-\subsection{Resultados principales}
+\subsection{Línea base: Fast Downward}
 
-La Tabla~\ref{tab:resultados} resume el comportamiento de los
-algoritmos sobre cada variante con $\beta=200$ y 5 reinicios.
-Reportamos número de movimientos del plan encontrado (o ``--'' si no se
-halló), nodos expandidos y tiempo en segundos.
+Antes de evaluar las implementaciones propias, ejecutamos Fast
+Downward sobre cada variante a través de \texttt{unified-planning},
+exactamente con la receta de la Práctica 4:
+
+\begin{verbatim}
+from unified_planning.shortcuts import OneshotPlanner
+planificador = OneshotPlanner(name="fast-downward")
+resultado = planificador.solve(problema_up)
+\end{verbatim}
+
+La Tabla~\ref{tab:fd} muestra los resultados. La variante 1 (cruz
+inglesa) \emph{es resoluble} y Fast Downward encuentra un plan óptimo
+de 31 movimientos. La variante 2 (5$\times$5 con hueco central) es
+demostrablemente irresoluble por paridad. Las variantes 3 y 5 no se
+resuelven dentro de los tiempos asignados (37 y 45 casillas).
+
+\begin{table}[t]
+\centering
+\caption{Resolución con Fast Downward (timeouts: 90 s para V1-V3, 180 s para V4-V5).}
+\label{tab:fd}
+\begin{tabular}{|c|l|r|r|}
+\hline
+\textbf{Var.} & \textbf{Estado}                     & \textbf{Movs.} & \textbf{Tpo (s)} \\\hline
+1 & \texttt{SOLVED\_SATISFICING}                    & 31 & 33{,}3  \\
+2 & \texttt{UNSOLVABLE\_INCOMPLETELY}               & -- & 79{,}6  \\
+3 & \texttt{TIMEOUT}                                & -- & $>90$   \\
+4 & error de decodificación$^{(*)}$                 & -- & 12{,}5  \\
+5 & \texttt{TIMEOUT}                                & -- & $>180$  \\\hline
+\end{tabular}
+\par\smallskip
+\footnotesize $^{(*)}$ Bug conocido de \texttt{up-fast-downward 0.5.2}
+en Windows al decodificar la salida estándar de error de FD.
+\end{table}
+
+\subsection{Resultados de los algoritmos propios}
+
+La Tabla~\ref{tab:resultados} resume el comportamiento de BFS y beam
+search sobre los mismos ficheros PDDL, cargados a través del lector
+\texttt{unified-planning}. Reportamos número de movimientos del plan
+encontrado (o ``--'' si no se halló), nodos expandidos y tiempo en
+segundos.
 
 \begin{table}[t]
 \centering
@@ -351,8 +388,9 @@ sobre la variante 1 (cruz inglesa) alcanzó las 31 iteraciones ---el
 mismo número de movimientos requerido por la solución óptima--- tras
 expandir $\approx 9{,}3\cdot 10^{5}$ nodos en 584\,s, pero la frontera
 se vació sin localizar el plan. Esto confirma empíricamente la
-incompletud del algoritmo en problemas de soluciones raras como el
-Senku clásico.
+incompletud del algoritmo: la variante 1 es resoluble (Fast Downward
+lo demuestra en 33\,s), pero las pocas trayectorias hacia la meta
+quedan fuera del haz seleccionado por la heurística pagoda.
 
 \subsection{Influencia de $\beta$}
 

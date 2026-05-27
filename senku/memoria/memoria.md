@@ -167,25 +167,58 @@ El requisito de aceptar dos ficheros .pddl arbitrarios se cumple con
 | 4 | Diamante (Manhattan-3)       |       25 | centro| No          |
 | 5 | Cruz extendida               |       45 | centro| Sí          |
 
-### 4.2 Resultados principales
+### 4.2 Línea base: Fast Downward (via unified-planning)
 
-| # | Algoritmo | Heur.     | Nodos  | Tiempo (s) |
-|---|-----------|-----------|-------:|-----------:|
-| 1 | BFS       | —         | 30 001 | 2,76       |
-| 1 | Beam      | pagoda    | 12 576 | 2,04       |
-| 1 | Beam      | compuesta | 14 924 | 9,55       |
-| 2 | BFS       | —         | 30 001 | 2,63       |
-| 2 | Beam      | pagoda    | 9 208  | 0,89       |
-| 2 | Beam      | compuesta | 10 790 | 4,81       |
-| 3 | BFS       | —         | 30 001 | 4,27       |
-| 3 | Beam      | pagoda    | 14 710 | 4,06       |
-| 3 | Beam      | compuesta | 17 918 | 25,68      |
-| 4 | BFS       | —         | 30 001 | 1,99       |
-| 4 | Beam      | pagoda    | 7 931  | 0,84       |
-| 4 | Beam      | compuesta | 8 842  | 3,57       |
-| 5 | BFS       | —         | 30 001 | 6,12       |
-| 5 | Beam      | pagoda    | 18 547 | 6,45       |
-| 5 | Beam      | compuesta | 21 305 | 24,96      |
+Antes de evaluar nuestras implementaciones, lanzamos Fast Downward
+sobre cada variante para establecer un baseline. Se utiliza el patrón
+de la Práctica 4 (`OneshotPlanner(name="fast-downward")`):
+
+| # | Estado de FD                  | Movs | Tiempo (s) |
+|---|-------------------------------|-----:|-----------:|
+| 1 | `SOLVED_SATISFICING`          |   31 |     33,3   |
+| 2 | `UNSOLVABLE_INCOMPLETELY`     |    — |     79,6   |
+| 3 | `TIMEOUT` (>90 s)             |    — |    >90     |
+| 4 | error de decodificación (*)   |    — |     12,5   |
+| 5 | `TIMEOUT` (>180 s)            |    — |   >180     |
+
+(*) Error conocido de `up-fast-downward 0.5.2` en Windows al decodificar
+la salida de error de FD; afecta a la entrega pero no a la corrección
+del enfoque.
+
+**Hallazgos clave**:
+- La **variante 1 (cruz inglesa)** *es resoluble*: Fast Downward
+  encuentra un plan de 31 movimientos en 33 s, lo cual coincide con
+  el mínimo teórico conocido.
+- La **variante 2 (cuadrado 5×5 con hueco central)** es *irresoluble*
+  por argumento de paridad (Fast Downward lo demuestra exhaustivamente
+  en 80 s).
+- Las variantes 3 y 5 no se resuelven en el tiempo asignado; al ser
+  más grandes (37 y 45 casillas) requerirían presupuestos mucho
+  mayores.
+
+### 4.3 BFS y Beam Search propios
+
+Ejecutados sobre los mismos ficheros PDDL (cargados con
+`carga_con_unified_planning`). BFS limitada a 30 000 nodos; Beam
+Search con β = 200 y 3 reinicios estocásticos:
+
+| # | Algoritmo | Heur.     | Nodos  | Tiempo (s) | Éxito |
+|---|-----------|-----------|-------:|-----------:|:-----:|
+| 1 | BFS       | —         | 30 001 |       2,76 |   ✗   |
+| 1 | Beam      | pagoda    | 12 576 |       2,04 |   ✗   |
+| 1 | Beam      | compuesta | 14 924 |       9,55 |   ✗   |
+| 2 | BFS       | —         | 30 001 |       2,63 |   ✗   |
+| 2 | Beam      | pagoda    |  9 208 |       0,89 |   ✗   |
+| 2 | Beam      | compuesta | 10 790 |       4,81 |   ✗   |
+| 3 | BFS       | —         | 30 001 |       4,27 |   ✗   |
+| 3 | Beam      | pagoda    | 14 710 |       4,06 |   ✗   |
+| 3 | Beam      | compuesta | 17 918 |      25,68 |   ✗   |
+| 4 | BFS       | —         | 30 001 |       1,99 |   ✗   |
+| 4 | Beam      | pagoda    |  7 931 |       0,84 |   ✗   |
+| 4 | Beam      | compuesta |  8 842 |       3,57 |   ✗   |
+| 5 | BFS       | —         | 30 001 |       6,12 |   ✗   |
+| 5 | Beam      | pagoda    | 18 547 |       6,45 |   ✗   |
+| 5 | Beam      | compuesta | 21 305 |      24,96 |   ✗   |
 
 *BFS limitada a 30 000 nodos; Beam con β=200, 3 reinicios, máximo 80 iteraciones. Ninguna configuración alcanzó la meta en modo estricto.*
 

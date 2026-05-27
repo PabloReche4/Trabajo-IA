@@ -169,3 +169,48 @@ def test_problema_a_pddl_contiene_secciones():
     pddl = problema_a_pddl(TABLEROS[1])
     for seccion in ["(define", "(:domain senku)", "(:objects", "(:init", "(:goal"]:
         assert seccion in pddl
+
+
+# ---------------------------------------------------------------------------
+# Integracion con unified-planning (estilo Practica 4)
+# ---------------------------------------------------------------------------
+
+
+def test_construye_problema_up_es_compatible():
+    """Verifica que el problema construido con la API Python de
+    unified-planning tiene el numero correcto de objetos y goals, y
+    que se puede serializar con PDDLWriter."""
+    try:
+        from unified_planning.io import PDDLWriter
+        from senku.src.dominio_up import construye_problema_up
+    except ImportError:
+        return  # entorno sin unified-planning: saltamos
+
+    tablero = TABLEROS[2]
+    problema_up = construye_problema_up(tablero)
+    assert sum(1 for _ in problema_up.all_objects) == len(tablero.casillas)
+    n_goals = len(list(problema_up.goals))
+    assert n_goals == len(tablero.meta_ocupadas) + len(tablero.meta_vacias)
+    # Serializacion (sin escribir a disco)
+    PDDLWriter(problema_up).get_problem()
+    PDDLWriter(problema_up).get_domain()
+
+
+def test_lector_unified_planning_round_trip():
+    """Carga un PDDL generado por el escritor manual usando el lector
+    basado en unified-planning."""
+    try:
+        from senku.src.lector_pddl import carga_con_unified_planning
+    except ImportError:
+        return
+    with tempfile.TemporaryDirectory() as tmpdir:
+        ruta_dom = Path(tmpdir) / "dominio.pddl"
+        ruta_prob = Path(tmpdir) / "problema.pddl"
+        # Copia el dominio Senku real y genera el problema
+        dom_origen = Path(__file__).resolve().parents[1] / "pddl" / "dominio_senku.pddl"
+        ruta_dom.write_text(dom_origen.read_text(encoding="utf-8"), encoding="utf-8")
+        from senku.src.generador_pddl import escribe_problema
+        escribe_problema(TABLEROS[4], ruta_prob)
+        problema = carga_con_unified_planning(ruta_dom, ruta_prob)
+        assert len(problema.tablero.casillas) == len(TABLEROS[4].casillas)
+        assert len(problema.saltos) == sum(1 for _ in TABLEROS[4].saltos())

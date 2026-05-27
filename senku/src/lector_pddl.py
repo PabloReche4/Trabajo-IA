@@ -2,31 +2,39 @@
 representacion interna `ProblemaSenku`.
 
 El requisito de la convocatoria de junio es que el sistema acepte dos
-ficheros PDDL arbitrarios. Para ello se proporcionan dos backends:
+ficheros PDDL arbitrarios. Para ello se usa la biblioteca recomendada
+en la asignatura, `unified_planning`, exactamente con la misma
+metodologia mostrada en la Practica 4:
 
-    - `carga_con_unified_planning`: utiliza la biblioteca
-      `unified_planning` (recomendada en la asignatura). Recomendable
-      cuando esta disponible porque valida la sintaxis PDDL completa y
-      es la misma que se usa en la Practica 4.
-    - `carga_con_parser_ligero`: parser propio especifico para el
-      dominio Senku usado en este trabajo. Solo soporta los predicados
-      `ocupada`, `vacia` y `salto` y los goals con conjunciones de los
-      mismos predicados (o sus negaciones). Util en entornos donde
-      `unified_planning` no esta instalado.
+    from unified_planning.io import PDDLReader
+    lector = PDDLReader()
+    problema_up = lector.parse_problem(dominio_pddl, problema_pddl)
 
-`carga_problema_pddl` selecciona automaticamente el primero disponible.
+Despues se recorren los hechos del estado inicial y la meta del objeto
+devuelto por la biblioteca para construir nuestro `ProblemaSenku`, que
+es lo que consumen los algoritmos de busqueda.
+
+Como red de seguridad se incluye un parser propio
+(`carga_con_parser_ligero`) que solo entiende el dominio Senku. Se usa
+unicamente si `unified_planning` no esta instalado en el entorno, lo
+que no deberia ocurrir en la entrega (la asignatura usa esta biblioteca
+en la Practica 4).
 """
 
 from pathlib import Path
 import re
-from typing import List, Set, Tuple
+from typing import List, Set
 
 from .estado import Movimiento, ProblemaSenku
 from .tableros import Coord, Tablero
 
 
 def _parse_coord(nombre: str) -> Coord:
-    """Convierte un identificador PDDL `p_R_C` en una coordenada (R, C)."""
+    """Convierte un identificador PDDL `p_R_C` en una coordenada (R, C).
+
+    Se acepta indistintamente mayusculas y minusculas porque
+    `unified_planning` normaliza los identificadores a minusculas al
+    parsear el fichero PDDL."""
     partes = nombre.split("_")
     if len(partes) != 3 or partes[0].lower() != "p":
         raise ValueError(
@@ -36,12 +44,24 @@ def _parse_coord(nombre: str) -> Coord:
 
 
 # ---------------------------------------------------------------------------
-# Backend basado en unified_planning
+# Backend principal: unified_planning (estilo Practica 4)
 # ---------------------------------------------------------------------------
 
 
-def carga_con_unified_planning(ruta_dominio: Path, ruta_problema: Path) -> ProblemaSenku:
-    from unified_planning.io import PDDLReader  # importacion diferida
+def carga_con_unified_planning(
+    ruta_dominio: Path, ruta_problema: Path
+) -> ProblemaSenku:
+    """Carga un par dominio + problema PDDL usando `unified_planning`.
+
+    La biblioteca se encarga de validar la sintaxis PDDL y devuelve un
+    objeto `Problem` del que extraemos:
+        - los objetos -> casillas del tablero;
+        - los hechos `ocupada`, `vacia` del :init -> estado inicial;
+        - los hechos `salto` del :init -> lista de movimientos posibles;
+        - los hechos del :goal (con sus negaciones) -> casillas que
+          deben quedar ocupadas o vacias en la meta.
+    """
+    from unified_planning.io import PDDLReader
 
     lector = PDDLReader()
     problema_up = lector.parse_problem(str(ruta_dominio), str(ruta_problema))
@@ -66,13 +86,12 @@ def carga_con_unified_planning(ruta_dominio: Path, ruta_problema: Path) -> Probl
     meta_ocupadas: Set[Coord] = set()
     meta_vacias: Set[Coord] = set()
     for goal in problema_up.goals:
+        # `goal` puede ser un AND de hechos o un hecho aislado.
         hechos = list(goal.args) if goal.is_and() else [goal]
         for hecho in hechos:
-            if hecho.is_not():
-                negado = True
+            negado = hecho.is_not()
+            if negado:
                 hecho = hecho.args[0]
-            else:
-                negado = False
             nombre = hecho.fluent().name
             args = [_parse_coord(str(a)) for a in hecho.args]
             if nombre == "ocupada":
@@ -98,7 +117,7 @@ def carga_con_unified_planning(ruta_dominio: Path, ruta_problema: Path) -> Probl
 
 
 # ---------------------------------------------------------------------------
-# Parser ligero propio
+# Fallback: parser propio (sin dependencias)
 # ---------------------------------------------------------------------------
 
 
@@ -106,13 +125,11 @@ _RE_TOKEN = re.compile(r"\(|\)|[^\s\(\)]+")
 
 
 def _tokenize(texto: str) -> List[str]:
-    # Eliminar comentarios PDDL (todo desde ; hasta fin de linea)
     sin_comentarios = re.sub(r";[^\n]*", "", texto)
     return _RE_TOKEN.findall(sin_comentarios)
 
 
 def _parse_sexpr(tokens: List[str]):
-    """Convierte una lista de tokens en una S-expresion anidada."""
     if not tokens:
         raise ValueError("Tokens agotados al parsear S-expresion")
     token = tokens.pop(0)
@@ -130,42 +147,26 @@ def _parse_sexpr(tokens: List[str]):
 
 
 def _extrae_seccion(arbol, etiqueta):
-    """Devuelve la primera sub-lista cuyo primer elemento coincide con
-    `etiqueta` (las secciones de PDDL empiezan por `:objects`, `:init`,
-    `:goal`, etc.)."""
     for nodo in arbol:
-        if isinstance(nodo, list) and nodo and isinstance(nodo[0], str) and nodo[0] == etiqueta:
+        if (
+            isinstance(nodo, list)
+            and nodo
+            and isinstance(nodo[0], str)
+            and nodo[0] == etiqueta
+        ):
             return nodo[1:]
     return []
 
 
-def _hechos_de_init(seccion_init):
-    """Devuelve los hechos del estado inicial. Cada hecho es una lista
-    ['predicado', 'arg1', 'arg2', ...]."""
-    return [n for n in seccion_init if isinstance(n, list)]
-
-
-def _hechos_de_goal(seccion_goal):
-    """Aplana el goal: admite forma `(and h1 h2 ...)` o un solo hecho."""
-    if not seccion_goal:
-        return []
-    nodo = seccion_goal[0]
-    if isinstance(nodo, list) and nodo and nodo[0] == "and":
-        return nodo[1:]
-    return [nodo]
-
-
-def carga_con_parser_ligero(ruta_dominio: Path, ruta_problema: Path) -> ProblemaSenku:
-    # El dominio no se usa para construir el problema (asumimos el dominio
-    # estandar de Senku), pero comprobamos que existe para detectar
-    # errores tempranos del usuario.
+def carga_con_parser_ligero(
+    ruta_dominio: Path, ruta_problema: Path
+) -> ProblemaSenku:
     ruta_dominio = Path(ruta_dominio)
     if not ruta_dominio.exists():
         raise FileNotFoundError(f"No existe el dominio: {ruta_dominio}")
 
     texto = Path(ruta_problema).read_text(encoding="utf-8")
-    tokens = _tokenize(texto)
-    arbol = _parse_sexpr(tokens)
+    arbol = _parse_sexpr(_tokenize(texto))
     if not isinstance(arbol, list) or not arbol or arbol[0] != "define":
         raise ValueError("El fichero no parece un problema PDDL valido")
 
@@ -174,8 +175,14 @@ def carga_con_parser_ligero(ruta_dominio: Path, ruta_problema: Path) -> Problema
         if isinstance(nodo, list) and nodo and nodo[0] == "problem":
             nombre_problema = nodo[1]
 
-    init = _hechos_de_init(_extrae_seccion(arbol[1:], ":init"))
-    goal_hechos = _hechos_de_goal(_extrae_seccion(arbol[1:], ":goal"))
+    init_section = _extrae_seccion(arbol[1:], ":init")
+    init = [n for n in init_section if isinstance(n, list)]
+    goal_section = _extrae_seccion(arbol[1:], ":goal")
+    if not goal_section:
+        goal_hechos = []
+    else:
+        nodo = goal_section[0]
+        goal_hechos = nodo[1:] if isinstance(nodo, list) and nodo and nodo[0] == "and" else [nodo]
 
     casillas: Set[Coord] = set()
     ocupadas: Set[Coord] = set()
@@ -183,21 +190,18 @@ def carga_con_parser_ligero(ruta_dominio: Path, ruta_problema: Path) -> Problema
     saltos: List[Movimiento] = []
     for hecho in init:
         if hecho[0] == "ocupada":
-            c = _parse_coord(hecho[1])
-            casillas.add(c); ocupadas.add(c)
+            c = _parse_coord(hecho[1]); casillas.add(c); ocupadas.add(c)
         elif hecho[0] == "vacia":
-            c = _parse_coord(hecho[1])
-            casillas.add(c); vacias.add(c)
+            c = _parse_coord(hecho[1]); casillas.add(c); vacias.add(c)
         elif hecho[0] == "salto":
-            terna = tuple(_parse_coord(t) for t in hecho[1:])
-            casillas.update(terna); saltos.append(terna)
+            t = tuple(_parse_coord(x) for x in hecho[1:])
+            casillas.update(t); saltos.append(t)
 
     meta_ocupadas: Set[Coord] = set()
     meta_vacias: Set[Coord] = set()
     for hecho in goal_hechos:
-        negado = False
-        if hecho[0] == "not":
-            negado = True
+        negado = hecho[0] == "not"
+        if negado:
             hecho = hecho[1]
         if hecho[0] == "ocupada":
             c = _parse_coord(hecho[1])
@@ -235,18 +239,17 @@ def carga_problema_pddl(
 ) -> ProblemaSenku:
     """Carga un par dominio + problema PDDL.
 
-    Parametros:
-        backend: "auto" (por defecto), "unified_planning" o "ligero".
-            En modo "auto" intenta primero `unified_planning` y si no
-            esta disponible cae al parser ligero.
-    """
-    if backend == "auto":
+    En el contexto de la asignatura, el backend por defecto es siempre
+    `unified_planning`. Si no esta disponible, se cae al parser ligero
+    propio. El parametro `backend` permite forzar uno u otro
+    explicitamente."""
+    if backend in {"auto", "unified_planning"}:
         try:
             return carga_con_unified_planning(ruta_dominio, ruta_problema)
         except ImportError:
+            if backend == "unified_planning":
+                raise
             return carga_con_parser_ligero(ruta_dominio, ruta_problema)
-    if backend == "unified_planning":
-        return carga_con_unified_planning(ruta_dominio, ruta_problema)
     if backend == "ligero":
         return carga_con_parser_ligero(ruta_dominio, ruta_problema)
     raise ValueError(f"Backend desconocido: {backend}")
