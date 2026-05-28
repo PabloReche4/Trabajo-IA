@@ -26,6 +26,7 @@ from .busqueda import beam_search_con_reinicios, busqueda_primero_anchura
 from .estado import ProblemaSenku
 from .generador_pddl import escribe_problema
 from .heuristicas import (
+    heuristica_conectividad,
     heuristica_pagoda,
     pagoda_clasica,
     pagoda_uniforme,
@@ -58,8 +59,15 @@ def comando_resolver(args: argparse.Namespace) -> int:
     if args.algoritmo == "fd":
         return _resuelve_con_fd(args, problema)
 
-    pesos = pagoda_clasica(problema.tablero) if args.pagoda == "clasica" else pagoda_uniforme(problema.tablero)
-    h = heuristica_pagoda(problema, pesos)
+    if args.heuristica == "conectividad":
+        h = heuristica_conectividad(problema)
+    else:
+        pesos = (
+            pagoda_clasica(problema.tablero)
+            if args.pagoda == "clasica"
+            else pagoda_uniforme(problema.tablero)
+        )
+        h = heuristica_pagoda(problema, pesos)
 
     if args.algoritmo == "bfs":
         resultado = busqueda_primero_anchura(problema, limite_nodos=args.limite)
@@ -131,8 +139,12 @@ def build_parser() -> argparse.ArgumentParser:
     p_resolver.add_argument("--intentos", type=int, default=3,
                             help="Numero de reinicios estocasticos.")
     p_resolver.add_argument(
+        "--heuristica", choices=["conectividad", "pagoda"], default="conectividad",
+        help="Heuristica de beam search: conectividad (recomendada) o pagoda.",
+    )
+    p_resolver.add_argument(
         "--pagoda", choices=["clasica", "uniforme"], default="clasica",
-        help="Asignacion de pesos pagoda a utilizar.",
+        help="Asignacion de pesos pagoda (solo si --heuristica pagoda).",
     )
     p_resolver.add_argument("--limite", type=int, default=None,
                             help="Limite de nodos / iteraciones.")

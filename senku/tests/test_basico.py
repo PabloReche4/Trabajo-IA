@@ -130,6 +130,37 @@ def test_beam_resuelve_caso_trivial():
     assert len(resultado.movimientos) == 1
 
 
+def test_beam_conectividad_resuelve_cruz_inglesa():
+    """La heuristica de conectividad permite a beam search resolver la
+    cruz inglesa (variante 1), la mas representativa del Senku clasico.
+    Es el resultado central del trabajo."""
+    from senku.src.heuristicas import heuristica_conectividad
+    from senku.src.busqueda import beam_search_con_reinicios
+
+    problema = ProblemaSenku.desde_tablero(TABLEROS[1], modo_relajado=True)
+    h = heuristica_conectividad(problema)
+    resultado = beam_search_con_reinicios(
+        problema, h, beta=300, intentos=6, iteraciones_maximas=80
+    )
+    assert resultado.exito
+    # La cruz inglesa tiene 32 piezas; reducir a 1 requiere 31 saltos.
+    assert len(resultado.movimientos) == 31
+
+
+def test_componentes_conexas():
+    """Verifica el conteo de componentes conexas."""
+    from senku.src.heuristicas import _componentes_conexas
+
+    # Dos piezas adyacentes: 1 componente
+    assert _componentes_conexas(frozenset({(0, 0), (0, 1)})) == 1
+    # Dos piezas separadas: 2 componentes
+    assert _componentes_conexas(frozenset({(0, 0), (0, 2)})) == 2
+    # Conjunto vacio: 0 componentes
+    assert _componentes_conexas(frozenset()) == 0
+    # Una L conexa: 1 componente
+    assert _componentes_conexas(frozenset({(0, 0), (0, 1), (1, 1)})) == 1
+
+
 def test_es_meta_modo_relajado():
     """En modo relajado, basta con que quede una sola pieza."""
     problema = _senku_3_en_linea()

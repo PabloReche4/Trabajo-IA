@@ -1,0 +1,13 @@
+{
+    "files.exclude": {
+        "**/.git": true,
+        "**/.svn": true,
+        "**/.hg": true,
+        "**/.DS_Store": true,
+        "**/Thumbs.db": true,
+        "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.aux": true,
+        "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.log": true,
+        "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.gz": true,
+        "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.out": true
+    }
+}

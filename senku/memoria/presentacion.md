@@ -1,7 +1,7 @@
 # Presentación — Planificación automática aplicada al Senku
 **Convocatoria de junio | Curso 2025/2026**
 
-*Pablo Reche Gabaldón y [Nombre del compañero/a]*
+*Pablo Reche Gabaldón y Sol Villegas Charlo*
 
 Tiempo objetivo: 10 minutos. Cada miembro presenta 5 minutos.
 
@@ -139,30 +139,34 @@ return fallo
 
 ---
 
-## Slide 9 — Mitigaciones (45 s)
+## Slide 9 — El problema de la pagoda y la solución (1 min)
 
-- **Heurística compuesta**: pagoda + aislamiento (×1000) + compacidad
-  (×0,1). El término de aislamiento penaliza estados con piezas que ya
-  no pueden eliminarse (callejones sin salida).
-- **Reinicios estocásticos**: ejecutar el algoritmo varias veces con
-  semillas distintas para el desempate.
-- **Modo relajado**: meta = una pieza en cualquier sitio. Amplía el
-  conjunto de soluciones.
+- La **pagoda es admisible** pero **no discrimina**: beam search falla
+  incluso con β = 2000. En 80 797 partidas aleatorias, ninguna llegó a
+  1 pieza.
+- **Heurística de conectividad** (la clave): minimizar el número de
+  componentes conexas de piezas. Para terminar con una sola pieza, el
+  conjunto debe mantenerse cohesionado.
+- Además: **reinicios estocásticos** y **modo relajado** (meta = una
+  pieza en cualquier sitio, criterio aclarado por el profesor).
 
 ---
 
 ## Slide 10 — Resultados (1 min)
 
-| Var. | Algoritmo | Heur. | Nodos  | t (s) |
-|-----:|-----------|-------|-------:|------:|
-| 1    | Beam      | pag.  | 12 576 |  2,04 |
-| 1    | Beam      | comp. | 14 924 |  9,55 |
-| 3    | Beam      | comp. | 17 918 | 25,68 |
-| 5    | Beam      | comp. | 21 305 | 24,96 |
+Beam search **con la heurística de conectividad** resuelve las tres
+variantes obligatorias (eligiendo bien el hueco inicial):
 
-- **Ningún algoritmo alcanzó la meta** en las 5 variantes con β = 200.
-- Experimento extremo: V1 con β = 2000 + 20 reinicios → 9,3·10⁵
-  nodos, 31 iteraciones (la profundidad correcta), aún sin solución.
+| Var. | Hueco       | β   | Movs | Nodos | t (s) |
+|-----:|-------------|----:|-----:|------:|------:|
+| 1    | (3,3)centro | 300 |  31  | 7 783 |  3,5  |
+| 3    | (0,2)       | 600 |  35  |17 381 | 11,2  |
+| 5    | (0,3)       | 600 |  43  |21 674 | 20,2  |
+
+- Con **pagoda**: ninguna variante se resuelve (ni con β = 2000).
+- **La posición del hueco inicial es decisiva**: V3 y V5 no se
+  resuelven desde el centro, sí desde un brazo (problema complementario).
+- Fast Downward (línea base) resuelve V1 en 33 s, confirma V2 irresoluble.
 
 ---
 
@@ -170,15 +174,14 @@ return fallo
 
 - El sistema implementa correctamente:
   - Dominio PDDL genérico para cualquier topología.
-  - BFS como búsqueda básica y baseline.
-  - Beam Search con pagoda (algoritmo de convocatoria de junio).
-  - Lector PDDL con dos backends.
-- **Hallazgo principal**: la pagoda es admisible pero no
-  discriminativa. Las soluciones del Senku son muy escasas y beam
-  search se atasca en callejones sin salida.
-- Las mitigaciones (heurística compuesta, reinicios) mejoran pero no
-  resuelven la incompletud.
-- Línea futura: incorporar look-ahead o combinar con búsqueda local.
+  - BFS (parte común) y Beam Search (convocatoria de junio).
+  - Lector PDDL con `unified_planning` + Fast Downward como baseline.
+- **Hallazgo principal**: la heurística importa más que β. La pagoda no
+  basta; la **conectividad** sí resuelve la cruz inglesa (β = 300).
+- **La posición del hueco inicial** determina la solubilidad (V3, V5).
+- Beam search es incompleto, pero con la heurística adecuada resuelve
+  el problema del enunciado.
+- Línea futura: look-ahead, búsqueda local, packings combinatorios.
 
 ---
 

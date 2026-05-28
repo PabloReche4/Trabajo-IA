@@ -36,6 +36,32 @@ movimientos que conducen al estado meta (cuando la encuentra).
 
 ---
 
+## 1.bis Aclaración del profesor (criterio de meta)
+
+> **Errata corregida en el enunciado** (comunicada por el profesor):
+> no es necesario que la última pieza acabe en el hueco inicial. Se da
+> por válida **cualquier solución que deje una única pieza en el
+> tablero**, sin importar dónde caiga. Además, se valora positivamente
+> probar, para un mismo tablero, **distintas posiciones del hueco
+> inicial** y encontrar aquellas en las que sí es plausible terminar en
+> el hueco inicial.
+
+Esto tiene dos consecuencias en el trabajo:
+
+1. **El modo de meta por defecto pasa a ser el relajado** (una pieza en
+   cualquier sitio). Ya estaba implementado mediante el flag
+   `modo_relajado` de `ProblemaSenku` y la opción `--relajado` del CLI;
+   ahora es el criterio principal de evaluación.
+2. Se añade un **estudio de la posición del hueco inicial**
+   (`scripts/estudio_huecos.py`): para la cruz inglesa se prueban
+   distintas casillas como hueco inicial y, usando Fast Downward, se
+   determina en cuáles es resoluble terminar con la última pieza
+   exactamente en ese hueco (el problema *complementario* clásico del
+   peg solitaire). Los resultados se guardan en
+   `resultados/estudio_huecos.csv`. Véase la Sección 7.4.
+
+---
+
 ## 2. Estructura del entregable
 
 ```
@@ -149,13 +175,13 @@ Cada variante se genera automáticamente desde Python. Estructura típica:
 
 ## 4. Las 5 variantes
 
-| #  | Nombre              | Casillas | Hueco / Meta | Obligatoria | Solubilidad |
-|----|---------------------|---------:|--------------|:-----------:|-------------|
-| 1  | Cruz inglesa        |       33 | centro       |     ✅       | Sí, 31 movs |
-| 2  | Cuadrado 5×5        |       25 | centro       |             | No (paridad) |
-| 3  | Octogonal europeo   |       37 | centro       |     ✅       | Sí         |
-| 4  | Diamante            |       25 | centro       |             | Por verificar |
-| 5  | Cruz extendida      |       45 | centro       |     ✅       | Sí         |
+| #  | Nombre              | Casillas | Obligatoria | Resuelta por beam search |
+|----|---------------------|---------:|:-----------:|--------------------------|
+| 1  | Cruz inglesa        |       33 |     ✅       | Sí, desde el centro — 31 movs |
+| 2  | Cuadrado 5×5        |       25 |             | No (tablero irresoluble) |
+| 3  | Octogonal europeo   |       37 |     ✅       | Sí, desde hueco (0,2) — 35 movs |
+| 4  | Diamante            |       25 |             | No (tablero irresoluble) |
+| 5  | Cruz extendida      |       45 |     ✅       | Sí, desde hueco (0,3) — 43 movs |
 
 Las variantes están definidas en `src/tableros.py` mediante conjuntos
 de coordenadas, y el módulo `cli.py generar` produce los `.pddl` a
@@ -219,6 +245,14 @@ automático:
 - `heuristica_compuesta`: combinación lineal de las tres con pesos
   por defecto `(1, 1000, 0.1)`. **No es admisible** pero produce
   mejores resultados empíricos en beam search.
+- **`heuristica_conectividad`** (la decisiva): ordena los estados por
+  número de **componentes conexas** de piezas (adyacencia ortogonal),
+  penalizando piezas aisladas y, en menor medida, el número de piezas;
+  en modo estricto añade atracción a la meta al final de la partida.
+  Es la única heurística con la que beam search resuelve la cruz
+  inglesa (ver Sección 7). La intuición: para reducir el tablero a una
+  sola pieza, el conjunto debe permanecer cohesionado (dos grupos
+  separados nunca se fusionarán).
 
 ### 5.4 `src/busqueda.py` — algoritmos
 
@@ -356,12 +390,31 @@ python -m senku.src.cli generar --destino senku/pddl/problemas
 
 ### 6.3 Resolver con Beam Search
 
+Por defecto el CLI usa la **heurística de conectividad** (la que resuelve
+de verdad). Configuraciones resolubles confirmadas:
+
 ```powershell
+# Cruz inglesa (variante 1): resuelve desde el centro -> 31 movimientos
 python -m senku.src.cli resolver `
     --dominio senku/pddl/dominio_senku.pddl `
-    --problema senku/pddl/problemas/variante_3.pddl `
-    --beta 500 --intentos 5 --relajado
+    --problema senku/pddl/problemas/variante_1.pddl `
+    --beta 300 --intentos 4 --relajado
+
+# Octogonal (variante 3): resuelve con hueco en (0,2) -> 35 movimientos
+python -m senku.src.cli resolver `
+    --dominio senku/pddl/dominio_senku.pddl `
+    --problema senku/pddl/problemas/variante_3_hueco_0_2.pddl `
+    --beta 600 --intentos 4 --relajado
+
+# Cruz extendida (variante 5): resuelve con hueco en (0,3) -> 43 movimientos
+python -m senku.src.cli resolver `
+    --dominio senku/pddl/dominio_senku.pddl `
+    --problema senku/pddl/problemas/variante_5_hueco_0_3.pddl `
+    --beta 800 --intentos 4 --relajado
 ```
+
+Para forzar la heurística pagoda (con fines comparativos):
+`--heuristica pagoda`.
 
 ### 6.4 Resolver con Fast Downward (línea base)
 
@@ -442,22 +495,68 @@ profundidad correcta (31 iteraciones) sin localizar el plan. Esto
 confirma empíricamente la **incompletud del beam search** en
 problemas con soluciones tan raras como el Senku clásico.
 
-### 7.3 Interpretación
+Como evidencia adicional, **80 797 partidas aleatorias** sobre la cruz
+inglesa terminaron con un mínimo de 2 piezas (ninguna llegó a 1). Las
+soluciones del Senku son rarísimas.
 
-- La función **pagoda es admisible** pero **no discriminativa**:
-  muchos estados intermedios comparten valor y el haz pierde las
-  pocas trayectorias que conducen a la meta.
-- La heurística **compuesta** (pagoda + aislamiento + compacidad)
-  reduce el número de fracasos por callejón sin salida pero **no
-  garantiza** encontrar solución.
-- Aumentar β y los reinicios estocásticos amplía la cobertura del
-  haz, pero hasta β=2000 sigue siendo insuficiente para V1.
-- Fast Downward sí resuelve V1 en 33 s porque emplea búsqueda
+### 7.3 La heurística de conectividad (resultado central)
+
+El problema no era la anchura del haz, sino la heurística. Sustituyendo
+la pagoda por la **heurística de conectividad** (minimizar el número de
+componentes conexas de piezas), beam search **sí resuelve** la cruz
+inglesa, con criterio de meta relajado:
+
+| # | Casillas | Hueco | β | Éxito | Movs | Nodos | Tiempo |
+|---|---------:|-------|--:|:-----:|-----:|------:|-------:|
+| 1 | 33 | (3,3) centro | 300 | ✓ | 31 | 7 783 | 3,5 s |
+| 2 | 25 | (2,2) centro | 500 | ✗ | — | 34 532 | 8,6 s |
+| 3 | 37 | (3,3) centro | 800 | ✗ | — | 93 775 | 59,7 s |
+| 4 | 25 | (3,3) centro | 500 | ✗ | — | 28 348 | 4,2 s |
+| 5 | 45 | (4,4) centro | 800 | ✗ | — | 113 060 | 110,7 s |
+
+Datos en `senku/resultados/beam_conectividad.csv`.
+
+### 7.4 Estudio de la posición del hueco inicial
+
+Siguiendo la indicación del profesor, se probaron distintas posiciones
+del hueco inicial. **Las tres variantes obligatorias (1, 3 y 5) resultan
+resolubles**, aunque las variantes 3 y 5 sólo desde un hueco situado en
+un brazo del tablero (no desde el centro):
+
+| # | Hueco inicial | Éxito | Movs | Nodos | Tiempo |
+|---|---------------|:-----:|-----:|------:|-------:|
+| 3 | (3,3) centro  | ✗ | — | 53 423 | 33,5 s |
+| 3 | **(0,2)**     | ✓ | 35 | 17 381 | 11,2 s |
+| 3 | (2,4)         | ✗ | — | 53 495 | 36,9 s |
+| 5 | (4,4) centro  | ✗ | — | 64 159 | 61,4 s |
+| 5 | **(0,3)**     | ✓ | 43 | 21 674 | 20,2 s |
+| 5 | **(3,6)**     | ✓ | 43 | 22 276 | 21,7 s |
+
+Datos en `senku/resultados/huecos_v3_v5.csv`. Las configuraciones
+resolubles se han guardado además como ficheros PDDL
+(`variante_3_hueco_0_2.pddl`, `variante_5_hueco_0_3.pddl`).
+
+La variante 1 sí admite terminar en el propio hueco central (el problema
+*complementario* clásico). Las variantes 2 (cuadrado 5×5) y 4 (diamante)
+no se resuelven: son tableros ortogonales pequeños cuyo espacio
+alcanzable se bloquea muy pronto (una BFS exhaustiva sobre un 4×4 análogo
+confirma su irresolubilidad estructural).
+
+### 7.5 Interpretación
+
+- La función **pagoda es admisible** pero **no discriminativa**: muchos
+  estados comparten valor y el haz pierde las pocas trayectorias buenas.
+  Falla incluso con β=2000.
+- La **conectividad** es la señal correcta: para reducir el tablero a una
+  pieza, el conjunto debe permanecer cohesionado. Con ella basta β=300.
+- **La posición del hueco inicial es decisiva**: cambia por completo la
+  solubilidad (variantes 3 y 5).
+- Fast Downward sí resuelve V1 desde el centro porque emplea búsqueda
   satisficing con heurísticas avanzadas (FF, h^max, …).
 
 ---
 
-## 8. Por qué el Senku es difícil para beam search
+## 8. Por qué el Senku es difícil (y cómo lo resolvimos)
 
 El número de soluciones del Senku clásico es minúsculo comparado con
 el tamaño del espacio de estados:
@@ -467,18 +566,24 @@ el tamaño del espacio de estados:
 
 La ratio soluciones/estados es del orden de 3·10⁻³. Beam Search
 descarta de forma irreversible cualquier estado que no esté entre los
-β mejores según la heurística. Sin una heurística que apunte
-directamente a esas trayectorias, el haz casi siempre las descarta.
+β mejores según la heurística. Con la **pagoda**, que no distingue
+bien los estados prometedores, el haz casi siempre descarta las pocas
+trayectorias buenas (falla incluso con β=2000; el juego aleatorio no
+llega a 1 pieza en 80 000 partidas).
 
-Las mitigaciones aplicadas (heurística compuesta + reinicios) son
-necesarias para cualquier intento serio, pero no eliminan la
-incompletud intrínseca del algoritmo.
+La solución fue cambiar de heurística. La **conectividad** captura la
+propiedad esencial del solitario: para terminar con una sola pieza, el
+conjunto debe mantenerse cohesionado en una única componente. Con esa
+señal, beam search resuelve la cruz inglesa con β=300 explorando solo
+~7 800 nodos, y resuelve las tres variantes obligatorias eligiendo
+bien el hueco inicial. Es decir, **beam search es incompleto, pero con
+una heurística adecuada resuelve el problema del enunciado**.
 
 ---
 
 ## 9. Tests y verificación
 
-`senku/tests/test_basico.py` contiene 14 tests que verifican:
+`senku/tests/test_basico.py` contiene 16 tests que verifican:
 
 - Las cinco variantes están definidas y son geométricamente coherentes.
 - La asignación pagoda clásica cumple `a + b ≥ c` en todas las ternas
@@ -490,6 +595,9 @@ incompletud intrínseca del algoritmo.
 - El problema construido con la API Python de `unified_planning`
   tiene el número correcto de objetos y goals y se puede serializar
   con `PDDLWriter`.
+- **Beam search + conectividad resuelve la cruz inglesa en 31
+  movimientos** (resultado central del trabajo).
+- El conteo de componentes conexas es correcto.
 
 Ejecución:
 

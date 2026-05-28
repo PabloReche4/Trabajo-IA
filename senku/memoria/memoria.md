@@ -1,7 +1,7 @@
 # Planificación automática aplicada al Senku
 **Convocatoria de junio — Curso 2025/2026**
 
-*Pablo Reche Gabaldón y [Nombre del compañero/a]*
+*Pablo Reche Gabaldón y Sol Villegas Charlo*
 *Grado en Ingeniería Informática — Ingeniería del Software, Universidad de Sevilla*
 
 ---
@@ -140,6 +140,26 @@ heurística *compuesta* añade dos términos no admisibles:
 Adicionalmente, los reinicios estocásticos permiten escapar de
 callejones sin salida específicos del desempate determinista.
 
+### 3.5.bis Heurística de conectividad (la decisiva)
+
+Tras comprobar que la pagoda no basta para guiar el haz, se diseñó una
+heurística basada en la **conectividad** del tablero, que es la que
+finalmente permite a beam search resolver la cruz inglesa. Ordena los
+estados por:
+
+1. **Número de componentes conexas** de piezas (peso 50, dominante),
+   considerando adyacencia ortogonal. Para reducir el tablero a una
+   sola pieza el conjunto debe mantenerse cohesionado: dos grupos
+   separados por huecos no recuperables nunca podrán fusionarse.
+2. **Piezas aisladas** (peso 20): refuerzo del criterio anterior.
+3. **Número total de piezas** (peso 1): desempate fino.
+4. **Atracción a la meta** (peso 0.5, solo modo estricto y con ≤8
+   piezas): dirige el final de la partida a la casilla objetivo.
+
+No es admisible, pero su poder discriminativo es muy superior al de la
+pagoda. Con ella, beam search resuelve la cruz inglesa en 31 movimientos
+tanto en modo relajado como estricto (terminando en el centro).
+
 ### 3.6 Sistema CLI y lectura PDDL
 
 El requisito de aceptar dos ficheros .pddl arbitrarios se cumple con
@@ -159,13 +179,13 @@ El requisito de aceptar dos ficheros .pddl arbitrarios se cumple con
 
 ### 4.1 Variantes
 
-| # | Nombre                       | Casillas | Hueco | Obligatoria |
-|---|------------------------------|---------:|-------|-------------|
-| 1 | Cruz inglesa estándar        |       33 | centro| Sí          |
-| 2 | Cuadrado 5×5                 |       25 | centro| No          |
-| 3 | Octogonal europeo            |       37 | centro| Sí          |
-| 4 | Diamante (Manhattan-3)       |       25 | centro| No          |
-| 5 | Cruz extendida               |       45 | centro| Sí          |
+| # | Nombre                       | Casillas | Obligatoria | Resuelta por beam search |
+|---|------------------------------|---------:|:-----------:|--------------------------|
+| 1 | Cruz inglesa estándar        |       33 | Sí          | Sí, centro — 31 movs     |
+| 2 | Cuadrado 5×5                 |       25 | No          | No (irresoluble)         |
+| 3 | Octogonal europeo            |       37 | Sí          | Sí, hueco (0,2) — 35 movs|
+| 4 | Diamante (Manhattan-3)       |       25 | No          | No (irresoluble)         |
+| 5 | Cruz extendida               |       45 | Sí          | Sí, hueco (0,3) — 43 movs|
 
 ### 4.2 Línea base: Fast Downward (via unified-planning)
 
@@ -220,20 +240,54 @@ Search con β = 200 y 3 reinicios estocásticos:
 | 5 | Beam      | pagoda    | 18 547 |       6,45 |   ✗   |
 | 5 | Beam      | compuesta | 21 305 |      24,96 |   ✗   |
 
-*BFS limitada a 30 000 nodos; Beam con β=200, 3 reinicios, máximo 80 iteraciones. Ninguna configuración alcanzó la meta en modo estricto.*
+*BFS limitada a 30 000 nodos; Beam con β=200, 3 reinicios, máximo 80 iteraciones. La pagoda no alcanza la meta en ninguna variante.*
 
-Experimento de fuerza bruta: variante 1 con β=2000 y 20 reinicios
-estocásticos. Beam search exploró ~9,3·10⁵ nodos en 584 s alcanzando
-las 31 iteraciones (profundidad equivalente al plan óptimo), pero la
-frontera se vació sin localizar el plan. Confirma empíricamente la
-incompletud del algoritmo en problemas de soluciones raras como el
-Senku clásico.
+Experimento de fuerza bruta con la pagoda: variante 1 con β=2000 y 20
+reinicios estocásticos. Beam search exploró ~9,3·10⁵ nodos en 584 s
+alcanzando las 31 iteraciones (profundidad equivalente al plan óptimo),
+pero la frontera se vació sin localizar el plan. Además, **80 797
+partidas aleatorias** sobre la cruz inglesa terminaron con un mínimo de
+2 piezas (ninguna llegó a 1). Esto evidencia que las soluciones del
+Senku son rarísimas y que la pagoda, pese a ser admisible, no las guía.
 
-### 4.3 Modo relajado
+### 4.4 Heurística de conectividad: beam search sí resuelve
 
-Con meta "una pieza en cualquier sitio", el espacio de soluciones
-crece y beam search obtiene más éxitos. El cuaderno incluye los
-resultados.
+La clave fue cambiar la heurística. La **heurística de conectividad**
+ordena los estados por número de componentes conexas de piezas
+(adyacencia ortogonal). Con ella, beam search resuelve la cruz inglesa
+y, eligiendo bien el hueco inicial, las tres variantes obligatorias.
+Criterio de meta: relajado (una pieza en cualquier sitio), tal y como
+aclaró el profesor.
+
+| # | Hueco inicial | β | Éxito | Movs | Nodos | T (s) |
+|---|---------------|---|:-----:|-----:|------:|------:|
+| 1 | (3,3) centro  | 300 | ✓ | 31 | 7 783 | 3,5 |
+| 2 | (2,2) centro  | 500 | ✗ | — | 34 532 | 8,6 |
+| 3 | (3,3) centro  | 800 | ✗ | — | 93 775 | 59,7 |
+| 4 | (3,3) centro  | 500 | ✗ | — | 28 348 | 4,2 |
+| 5 | (4,4) centro  | 800 | ✗ | — | 113 060 | 110,7 |
+
+### 4.5 Estudio de la posición del hueco inicial
+
+El profesor valora explorar distintas posiciones del hueco inicial. Al
+hacerlo, **las tres variantes obligatorias (1, 3 y 5) resultan
+resolubles** por beam search, aunque no siempre desde el centro:
+
+| # | Hueco inicial | Éxito | Movs | Nodos | T (s) |
+|---|---------------|:-----:|-----:|------:|------:|
+| 3 | (3,3) centro  | ✗ | — | 53 423 | 33,5 |
+| 3 | **(0,2)**     | ✓ | 35 | 17 381 | 11,2 |
+| 3 | (2,4)         | ✗ | — | 53 495 | 36,9 |
+| 5 | (4,4) centro  | ✗ | — | 64 159 | 61,4 |
+| 5 | **(0,3)**     | ✓ | 43 | 21 674 | 20,2 |
+| 5 | **(3,6)**     | ✓ | 43 | 22 276 | 21,7 |
+
+Las variantes 2 (cuadrado 5×5) y 4 (diamante) no se resuelven; son
+tableros ortogonales pequeños cuyo espacio alcanzable se bloquea muy
+pronto (BFS exhaustiva sobre un tablero 4×4 análogo confirma su
+irresolubilidad). La variante 1 sí termina en el propio hueco central
+(problema complementario clásico), mientras que en las variantes 3 y 5
+es necesario partir de un hueco en el brazo para hallar solución.
 
 ---
 
@@ -246,8 +300,15 @@ resultados.
 - **Incompletud de beam search**: descarta estados que pudieran
   pertenecer a la única solución. En el Senku, donde las soluciones
   son escasas, esto se traduce en fracaso sistemático cuando la
-  heurística carece de poder discriminativo. Las mitigaciones
-  (compuesta + reinicios) alivian, no eliminan, este problema.
+  heurística carece de poder discriminativo.
+- **La heurística importa más que β**: la pagoda admisible falla
+  incluso con β=2000, mientras que la heurística de conectividad
+  resuelve la cruz inglesa con β=300 explorando ~7 800 nodos. El cuello
+  de botella no es la anchura del haz sino la calidad de la señal.
+- **La posición del hueco inicial es decisiva**: las variantes 3 y 5
+  no se resuelven desde el centro pero sí desde un hueco en el brazo,
+  lo que conecta con el problema complementario clásico del peg
+  solitaire.
 
 ---
 
@@ -273,11 +334,16 @@ módulo Python implementa BFS y beam search con función pagoda,
 ampliable con heurísticas compuestas y reinicios.
 
 Los experimentos confirman que (i) el espacio del Senku escapa a la
-búsqueda exhaustiva y (ii) la incompletud de beam search se hace muy
-patente en problemas con escasas soluciones. La pagoda proporciona
-una cota admisible útil pero, por sí sola, es insuficiente como señal
-de búsqueda; combinarla con términos no admisibles mejora claramente
-el rendimiento sin romper la estructura del algoritmo original.
+búsqueda exhaustiva; (ii) la pagoda, pese a ser admisible, no contiene
+señal suficiente para guiar beam search (falla incluso con β=2000); y
+(iii) una heurística de **conectividad** —minimizar el número de
+componentes conexas de piezas— sí permite a beam search resolver la
+cruz inglesa (31 movimientos, ~7 800 nodos) y, eligiendo
+adecuadamente el hueco inicial, las tres variantes obligatorias
+(1, 3 y 5). El estudio de la posición del hueco inicial confirma el
+fenómeno del problema complementario: en las variantes 3 y 5 sólo se
+encuentra solución partiendo de un hueco situado en un brazo del
+tablero, no desde el centro.
 
 ---
 

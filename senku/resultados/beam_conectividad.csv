@@ -1,0 +1,6 @@
+variante,casillas,hueco,beta,exito,movimientos,nodos,tiempo_s
+1,33,"(3,3) centro",300,True,31,7783,3.5
+2,25,"(2,2) centro",500,False,0,34532,8.6
+3,37,"(3,3) centro",800,False,0,93775,59.7
+4,25,"(3,3) centro",500,False,0,28348,4.2
+5,45,"(4,4) centro",800,False,0,113060,110.7

@@ -132,6 +132,84 @@ def heuristica_aislamiento(problema: ProblemaSenku) -> Callable[[Estado], int]:
     return h
 
 
+def _componentes_conexas(estado: Estado) -> int:
+    """Cuenta las componentes conexas del estado considerando adyacencia
+    ortogonal (arriba, abajo, izquierda, derecha) entre casillas
+    ocupadas.
+
+    En el Senku, para reducir el tablero a una unica pieza es necesario
+    que, a grandes rasgos, las piezas permanezcan "juntas": dos piezas
+    separadas por huecos que no pueden cerrarse nunca podran fusionarse.
+    Cada componente conexa adicional es, por tanto, un grupo que muy
+    probablemente quede aislado al final. Minimizar el numero de
+    componentes resulta ser una senal de busqueda mucho mas informativa
+    que la pagoda para este problema."""
+    restantes = set(estado)
+    componentes = 0
+    while restantes:
+        componentes += 1
+        pila = [restantes.pop()]
+        while pila:
+            r, c = pila.pop()
+            for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
+                vecino = (r + dr, c + dc)
+                if vecino in restantes:
+                    restantes.discard(vecino)
+                    pila.append(vecino)
+    return componentes
+
+
+def heuristica_conectividad(
+    problema: ProblemaSenku,
+    w_componentes: float = 50.0,
+    w_aislamiento: float = 20.0,
+    w_piezas: float = 1.0,
+    w_meta: float = 0.5,
+    umbral_meta: int = 8,
+) -> Callable[[Estado], float]:
+    """Heuristica basada en la conectividad del tablero.
+
+    Combina cuatro terminos, en orden de importancia:
+        1. numero de componentes conexas (dominante): cada componente
+           extra es un grupo que tendera a quedar aislado;
+        2. numero de piezas aisladas (sin movimiento posible);
+        3. numero total de piezas (criterio de desempate fino);
+        4. atraccion hacia la meta: solo en modo estricto y cuando
+           quedan pocas piezas (<= `umbral_meta`), se anade la suma de
+           distancias Manhattan a la casilla meta, para que el final de
+           la partida se dirija a la posicion objetivo.
+
+    Esta heuristica es la que permite a beam search resolver tableros
+    grandes como la cruz inglesa, donde la pagoda por si sola fracasa.
+    No es admisible, pero su poder discriminativo es muy superior. El
+    termino de conectividad codifica la intuicion de que, para terminar
+    con una sola pieza, el conjunto de piezas debe mantenerse cohesionado
+    durante toda la partida."""
+    # Centroide de la meta (solo se usa en modo estricto).
+    if problema.meta_ocupadas:
+        objetivo = next(iter(problema.meta_ocupadas))
+    else:
+        objetivo = None
+
+    def h(estado: Estado) -> float:
+        valor = (
+            w_componentes * _componentes_conexas(estado)
+            + w_aislamiento * _piezas_aisladas(estado, problema)
+            + w_piezas * len(estado)
+        )
+        if (
+            not problema.modo_relajado
+            and objetivo is not None
+            and len(estado) <= umbral_meta
+        ):
+            valor += w_meta * sum(
+                abs(r - objetivo[0]) + abs(c - objetivo[1]) for r, c in estado
+            )
+        return valor
+
+    return h
+
+
 def heuristica_compacidad(problema: ProblemaSenku) -> Callable[[Estado], float]:
     """Heuristica basada en la distancia agregada al centro de la meta.
 
