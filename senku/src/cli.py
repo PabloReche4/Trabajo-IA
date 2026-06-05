@@ -22,7 +22,11 @@ import argparse
 import sys
 from pathlib import Path
 
-from .busqueda import beam_search_con_reinicios, busqueda_primero_anchura
+from .busqueda import (
+    beam_search_con_reinicios,
+    beam_search_iterativo,
+    busqueda_primero_anchura,
+)
 from .estado import ProblemaSenku
 from .generador_pddl import escribe_problema
 from .heuristicas import (
@@ -71,6 +75,17 @@ def comando_resolver(args: argparse.Namespace) -> int:
 
     if args.algoritmo == "bfs":
         resultado = busqueda_primero_anchura(problema, limite_nodos=args.limite)
+    elif args.algoritmo == "beam-iter":
+        # Variante con anchura creciente: empieza pequena y solo invierte
+        # mas presupuesto si la instancia lo necesita.
+        resultado = beam_search_iterativo(
+            problema,
+            heuristica=h,
+            betas=[100, 300, 800, 1500],
+            intentos_por_beta=args.intentos,
+            iteraciones_maximas=args.limite,
+            usar_visitados=not args.sin_visitados,
+        )
     else:
         resultado = beam_search_con_reinicios(
             problema,
@@ -131,8 +146,9 @@ def build_parser() -> argparse.ArgumentParser:
     p_resolver.add_argument("--dominio", required=True)
     p_resolver.add_argument("--problema", required=True)
     p_resolver.add_argument(
-        "--algoritmo", choices=["beam", "bfs", "fd"], default="beam",
-        help="beam=beam search (junio); bfs=parte comun; fd=Fast Downward.",
+        "--algoritmo", choices=["beam", "beam-iter", "bfs", "fd"], default="beam",
+        help="beam=beam search (junio); beam-iter=beam con beta creciente; "
+             "bfs=parte comun; fd=Fast Downward.",
     )
     p_resolver.add_argument("--beta", type=int, default=100,
                             help="Anchura del haz para beam search.")

@@ -78,7 +78,7 @@ Opciones principales:
 
 | Opción          | Descripción                                            |
 |-----------------|--------------------------------------------------------|
-| `--algoritmo`   | `beam` (por defecto) o `bfs`                           |
+| `--algoritmo`   | `beam` (defecto), `beam-iter`, `bfs`, `fd`             |
 | `--beta`        | Anchura del haz (β). Por defecto 100.                  |
 | `--intentos`    | Reinicios estocásticos (sólo con beam). Por defecto 3.  |
 | `--pagoda`      | `clasica` (por defecto) o `uniforme`.                  |

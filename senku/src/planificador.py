@@ -22,6 +22,12 @@ from typing import List, Optional, Tuple
 
 from unified_planning.shortcuts import OneshotPlanner, get_environment
 
+from .parche_fd import aplicar_parche
+
+# Aplica el parche que neutraliza el UnicodeDecodeError de
+# up-fast-downward 0.5.2 al decodificar la salida de FD en Windows.
+aplicar_parche()
+
 # Por defecto desactivamos la cabecera de creditos que imprime la
 # biblioteca cada vez que se construye un planificador; en la Practica 4
 # se sugiere expresamente esta linea.

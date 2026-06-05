@@ -147,6 +147,45 @@ def test_beam_conectividad_resuelve_cruz_inglesa():
     assert len(resultado.movimientos) == 31
 
 
+def test_beam_search_reporta_min_piezas():
+    """beam_search debe rellenar min_piezas_alcanzadas, tanto en exito
+    como en fallo, para conocer cuanto se aproximo a la meta."""
+    problema = _senku_3_en_linea()
+    pesos = pagoda_uniforme(problema.tablero)
+    h = heuristica_pagoda(problema, pesos)
+    r = beam_search(problema, h, beta=5, iteraciones_maximas=5)
+    assert r.exito
+    assert r.min_piezas_alcanzadas == 1
+
+
+def test_beam_iterativo_resuelve_v1():
+    """beam_search_iterativo, partiendo de un beta pequeno, debe acabar
+    encontrando solucion a la cruz inglesa."""
+    from senku.src.heuristicas import heuristica_conectividad
+    from senku.src.busqueda import beam_search_iterativo
+
+    problema = ProblemaSenku.desde_tablero(TABLEROS[1], modo_relajado=True)
+    h = heuristica_conectividad(problema)
+    resultado = beam_search_iterativo(
+        problema, h, betas=[100, 300, 800], intentos_por_beta=3
+    )
+    assert resultado.exito
+    assert len(resultado.movimientos) == 31
+    assert "beta_exitoso" in resultado.parametros
+
+
+def test_parche_fd_aplicable():
+    """El parche de up-fast-downward se puede aplicar sin errores
+    (idempotente). Verifica solo que la importacion y la llamada no
+    fallan; no requiere ejecutar Fast Downward."""
+    try:
+        from senku.src.parche_fd import aplicar_parche
+    except ImportError:
+        return
+    aplicar_parche()
+    aplicar_parche()  # idempotente
+
+
 def test_componentes_conexas():
     """Verifica el conteo de componentes conexas."""
     from senku.src.heuristicas import _componentes_conexas

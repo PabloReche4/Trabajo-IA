@@ -390,16 +390,17 @@ Downward, ajeno al modelo PDDL.
 \toprule
 \textbf{Var.} & \textbf{Estado} & \textbf{Movs.} & \textbf{T (s)} \\
 \midrule
-1 & \texttt{SOLVED\_SATISFICING}      &  31 &  33,3 \\
-2 & \texttt{UNSOLVABLE\_INCOMPLETELY} &  -- &  79,6 \\
-3 & \texttt{TIMEOUT}                  &  -- & $>$90 \\
-4 & error de decodificación$^{*}$     &  -- &  12,5 \\
-5 & \texttt{TIMEOUT}                  &  -- & $>$180 \\
+1 & \texttt{SOLVED\_SATISFICING}      &  31 &  10,6 \\
+2 & \texttt{UNSOLVABLE\_INCOMPLETELY} &  -- &  22,1 \\
+3 & \texttt{TIMEOUT}                  &  -- & $>$60 \\
+4 & \texttt{UNSOLVABLE\_INCOMPLETELY} &  -- &   3,2 \\
+5 & \texttt{TIMEOUT}                  &  -- & $>$60 \\
 \bottomrule
 \end{tabular}
 \par\smallskip
-\footnotesize $^{*}$ Bug conocido de \texttt{up-fast-downward 0.5.2} en
-Windows.
+\footnotesize Datos tras aplicar el parche \texttt{parche\_fd.py}, que
+neutraliza un bug de \texttt{up-fast-downward 0.5.2} al decodificar la
+salida de FD en Windows.
 \end{table}
 
 
@@ -489,28 +490,42 @@ las variantes 3 y 5 sólo se resuelven partiendo de un hueco situado en un
 brazo del tablero, no desde el centro. Es el fenómeno del problema
 \emph{complementario} clásico del peg solitaire.
 
+El barrido exhaustivo (probando \textbf{todos} los huecos posibles bajo
+simetría) confirma la influencia de la posición del hueco
+(Tabla~\ref{tab:huecos}).
+
 \begin{table}
-\caption{Influencia del hueco inicial (beam search + conectividad, meta relajada).}
+\caption{Barrido exhaustivo del hueco inicial (beam iterativo + conectividad, meta relajada). \emph{Min} = mínimo absoluto de piezas alcanzado entre todos los huecos.}
 \label{tab:huecos}
 \centering
-\begin{tabular}{cccrr}
+\begin{tabular}{crrrrr}
 \toprule
-\textbf{Var.} & \textbf{Hueco} & \textbf{Éxito} & \textbf{Movs.} & \textbf{T (s)} \\
+\textbf{Var.} & \textbf{Cas.} & \textbf{Huecos} & \textbf{Resol.} & \textbf{\%} & \textbf{Min} \\
 \midrule
-3 & (3,3) centro & no & -- & 33,5 \\
-3 & \textbf{(0,2)} & sí & 35 & 11,2 \\
-3 & (2,4) & no & -- & 36,9 \\
-5 & (4,4) centro & no & -- & 61,4 \\
-5 & \textbf{(0,3)} & sí & 43 & 20,2 \\
-5 & \textbf{(3,6)} & sí & 43 & 21,7 \\
+1 & 33 & 12 & \textbf{12} & \textbf{100,0} & 1 \\
+2 & 25 &  9 &  4          &  44,4          & 1 \\
+3 & 37 & 13 &  6          &  46,2          & 1 \\
+4 & 25 & 10 &  0          &   0,0          & \textbf{4} \\
+5 & 45 & 16 &  7          &  43,8          & 1 \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-Las variantes 2 (cuadrado 5$\times$5) y 4 (diamante) no se resuelven: son
-tableros ortogonales pequeños cuyo espacio alcanzable se bloquea muy pronto.
-Una BFS exhaustiva sobre un tablero 4$\times$4 análogo confirma que ese tipo
-de tableros es estructuralmente irresoluble a una sola pieza.
+\textbf{Lecturas clave}:
+\begin{itemize}
+\item La \textbf{cruz inglesa (V1)} es resoluble desde \emph{cualquier}
+  hueco inicial (12/12).
+\item Las variantes 2 (cuadrado), 3 (octogonal) y 5 (cruz extendida)
+  presentan solubilidad parcial: el centro \emph{no} resuelve, pero
+  varios huecos del brazo sí.
+\item La variante 4 (diamante) es estructuralmente irresoluble desde
+  cualquier hueco: el mínimo absoluto alcanzado es 4 piezas. Es
+  coherente con la BFS exhaustiva sobre el espacio entero.
+\end{itemize}
+
+El \texttt{Resultado} de \emph{beam search} incluye ahora el atributo
+\texttt{min\_piezas\_alcanzadas}, que diagnostica cuán cerca se quedó
+la búsqueda cuando no encuentra la meta.
 
 
 \subsection{Análisis}

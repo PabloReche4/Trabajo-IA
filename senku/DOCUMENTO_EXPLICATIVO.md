@@ -175,13 +175,13 @@ Cada variante se genera automáticamente desde Python. Estructura típica:
 
 ## 4. Las 5 variantes
 
-| #  | Nombre              | Casillas | Obligatoria | Resuelta por beam search |
-|----|---------------------|---------:|:-----------:|--------------------------|
-| 1  | Cruz inglesa        |       33 |     ✅       | Sí, desde el centro — 31 movs |
-| 2  | Cuadrado 5×5        |       25 |             | No (tablero irresoluble) |
-| 3  | Octogonal europeo   |       37 |     ✅       | Sí, desde hueco (0,2) — 35 movs |
-| 4  | Diamante            |       25 |             | No (tablero irresoluble) |
-| 5  | Cruz extendida      |       45 |     ✅       | Sí, desde hueco (0,3) — 43 movs |
+| #  | Nombre              | Casillas | Obligatoria | Huecos resolubles |
+|----|---------------------|---------:|:-----------:|-------------------|
+| 1  | Cruz inglesa        |       33 |     ✅       | **12/12 (100%)** — desde cualquier hueco |
+| 2  | Cuadrado 5×5        |       25 |             | 4/9 (44%) — solo desde algunos huecos |
+| 3  | Octogonal europeo   |       37 |     ✅       | 6/13 (46%) — desde el brazo, no el centro |
+| 4  | Diamante            |       25 |             | 0/10 — irresoluble desde cualquier hueco |
+| 5  | Cruz extendida      |       45 |     ✅       | 7/16 (44%) — desde varios huecos del brazo |
 
 Las variantes están definidas en `src/tableros.py` mediante conjuntos
 de coordenadas, y el módulo `cli.py generar` produce los `.pddl` a
@@ -262,6 +262,12 @@ automático:
   Senku crece exponencialmente.
 - `busqueda_primero_profundidad(problema, limite_profundidad)`: DFS
   iterativa, incluida como referencia.
+- `beam_search_iterativo(problema, heuristica, betas=[100,300,800,1500])`:
+  variante natural del beam search que prueba **anchuras crecientes**:
+  empieza con un haz pequeño (rápido) y sólo escala a anchuras mayores
+  si la instancia no se resuelve. Mantiene la estructura del algoritmo
+  original y reduce drásticamente el tiempo medio en instancias
+  fáciles.
 - `beam_search(problema, heuristica, beta, ...)`: implementación del
   algoritmo de la convocatoria. Sigue paso a paso el pseudocódigo del
   enunciado:
@@ -335,6 +341,24 @@ resultado = planificador.solve(problema_up)
 Devuelve un `ResultadoPlanificador` con la lista de movimientos del
 plan (si lo hay), el estado y el tiempo de ejecución. Se utiliza como
 línea base para contrastar la calidad de nuestro beam search.
+
+### 5.7.bis `src/parche_fd.py` — parche para `up-fast-downward 0.5.2`
+
+La versión actual de `up-fast-downward` (0.5.2) tiene un bug en Windows:
+al decodificar la salida de error de Fast Downward llama a
+`bytes.decode()` sin `errors='replace'`, lo que dispara un
+`UnicodeDecodeError` cuando FD emite cualquier carácter no-ASCII
+(habitual). El módulo `parche_fd.py` aplica un parche tolerante:
+
+```python
+from senku.src.parche_fd import aplicar_parche
+aplicar_parche()  # idempotente
+```
+
+Después del parche, `OneshotPlanner('fast-downward').solve(...)`
+funciona normalmente. El parche se aplica automáticamente al importar
+`senku.src.planificador`, y el notebook lo aplica explícitamente al
+principio de la celda de Fast Downward.
 
 ### 5.8 `src/generador_pddl.py` — escritura de problemas
 
@@ -447,24 +471,29 @@ Ejecutado vía `unified_planning` con `OneshotPlanner(name="fast-downward")`:
 
 | Var. | Estado                       | Movs | Tiempo |
 |------|------------------------------|-----:|-------:|
-| 1    | `SOLVED_SATISFICING`         |   31 | 33,3 s |
-| 2    | `UNSOLVABLE_INCOMPLETELY`    |    — | 79,6 s |
-| 3    | `TIMEOUT` (>90 s)            |    — | >90 s  |
-| 4    | error de decodificación (bug `up-fast-downward 0.5.2`) | — | 12,5 s |
-| 5    | `TIMEOUT` (>180 s)           |    — | >180 s |
+| 1    | `SOLVED_SATISFICING`         |   31 | 10,6 s |
+| 2    | `UNSOLVABLE_INCOMPLETELY`    |    — | 22,1 s |
+| 3    | `TIMEOUT` (60 s)             |    — | 61,0 s |
+| 4    | `UNSOLVABLE_INCOMPLETELY`    |    — |  3,2 s |
+| 5    | `TIMEOUT` (60 s)             |    — | 62,1 s |
 
 Los datos están en `senku/resultados/fast_downward.csv` y pueden
 regenerarse con `python senku/scripts/experimento_fd_individual.py
 180`.
 
 **Lectura clave**: la variante 1 (cruz inglesa) **es resoluble** y
-Fast Downward encuentra un plan óptimo de 31 movimientos en ~33 s.
-La variante 2 (5×5 con hueco central) está confirmada **irresoluble**
-por argumento de paridad. Las variantes 3 y 5 son las más grandes
-(37 y 45 casillas); requerirían presupuestos de cómputo mayores para
-agotar la búsqueda completa. El error de la variante 4 se debe a un
-bug conocido de la última versión de `up-fast-downward` al decodificar
-la salida de Fast Downward en Windows (no es un fallo del modelo).
+Fast Downward encuentra un plan de 31 movimientos en ~11 s. Las
+variantes 2 (cuadrado 5×5) y 4 (diamante) están **confirmadas
+irresolubles** por refutación completa de Fast Downward. Las
+variantes 3 y 5 son las más grandes (37 y 45 casillas); con timeout de
+60 s no se resuelven, pero con un hueco inicial alternativo en el
+brazo del tablero sí (ver Sección 7.4).
+
+*Nota técnica*: `up-fast-downward 0.5.2` tiene un bug en Windows que
+hace fallar el decode UTF-8 de la salida de FD. El módulo
+`src/parche_fd.py` lo neutraliza con `errors='replace'` y se aplica
+automáticamente al importar `senku.src.planificador` o explícitamente
+en el notebook.
 
 ### 7.2 BFS y Beam Search propios
 
@@ -499,48 +528,79 @@ Como evidencia adicional, **80 797 partidas aleatorias** sobre la cruz
 inglesa terminaron con un mínimo de 2 piezas (ninguna llegó a 1). Las
 soluciones del Senku son rarísimas.
 
-### 7.3 La heurística de conectividad (resultado central)
+### 7.3 La heurística de conectividad + beam iterativo (resultado central)
 
 El problema no era la anchura del haz, sino la heurística. Sustituyendo
 la pagoda por la **heurística de conectividad** (minimizar el número de
-componentes conexas de piezas), beam search **sí resuelve** la cruz
-inglesa, con criterio de meta relajado:
+componentes conexas de piezas), y empleando **beam search iterativo**
+(anchura creciente automática), beam search resuelve **V1 desde el
+centro** y, en general, todas las instancias en las que existe solución:
 
-| # | Casillas | Hueco | β | Éxito | Movs | Nodos | Tiempo |
-|---|---------:|-------|--:|:-----:|-----:|------:|-------:|
-| 1 | 33 | (3,3) centro | 300 | ✓ | 31 | 7 783 | 3,5 s |
-| 2 | 25 | (2,2) centro | 500 | ✗ | — | 34 532 | 8,6 s |
-| 3 | 37 | (3,3) centro | 800 | ✗ | — | 93 775 | 59,7 s |
-| 4 | 25 | (3,3) centro | 500 | ✗ | — | 28 348 | 4,2 s |
-| 5 | 45 | (4,4) centro | 800 | ✗ | — | 113 060 | 110,7 s |
+| # | Casillas | Hueco | β resuelto | Éxito | Movs | Nodos | Tiempo |
+|---|---------:|-------|-----------:|:-----:|-----:|------:|-------:|
+| 1 | 33 | (3,3) centro | 300 | ✓ | 31 | 15 876 | 2,6 s |
+| 2 | 25 | (2,2) centro | — | ✗ | — | — | min=2 piezas |
+| 3 | 37 | (3,3) centro | — | ✗ | — | — | min=2 piezas |
+| 4 | 25 | (3,3) centro | — | ✗ | — | — | min=4 piezas |
+| 5 | 45 | (4,4) centro | — | ✗ | — | — | min=2 piezas |
 
-Datos en `senku/resultados/beam_conectividad.csv`.
+V2, V3, V4 y V5 desde el centro **no son resolubles** (o son
+estructuralmente imposibles, o requieren un hueco distinto). El
+**barrido exhaustivo de huecos** (Sección 7.4) revela qué huecos
+permiten encontrar solución en cada variante.
 
-### 7.4 Estudio de la posición del hueco inicial
+Datos en `senku/resultados/beam_conectividad.csv`. Una mejora
+importante es el campo **`min_piezas_alcanzadas`**: cuando beam search
+no llega a 1 pieza, este número indica el mínimo absoluto al que
+descendió, lo que permite diagnosticar la dificultad de cada
+configuración.
 
-Siguiendo la indicación del profesor, se probaron distintas posiciones
-del hueco inicial. **Las tres variantes obligatorias (1, 3 y 5) resultan
-resolubles**, aunque las variantes 3 y 5 sólo desde un hueco situado en
-un brazo del tablero (no desde el centro):
+### 7.4 Estudio exhaustivo de la posición del hueco inicial
 
-| # | Hueco inicial | Éxito | Movs | Nodos | Tiempo |
-|---|---------------|:-----:|-----:|------:|-------:|
-| 3 | (3,3) centro  | ✗ | — | 53 423 | 33,5 s |
-| 3 | **(0,2)**     | ✓ | 35 | 17 381 | 11,2 s |
-| 3 | (2,4)         | ✗ | — | 53 495 | 36,9 s |
-| 5 | (4,4) centro  | ✗ | — | 64 159 | 61,4 s |
-| 5 | **(0,3)**     | ✓ | 43 | 21 674 | 20,2 s |
-| 5 | **(3,6)**     | ✓ | 43 | 22 276 | 21,7 s |
+Siguiendo la indicación del profesor, se realiza un **barrido sistemático
+de TODAS las posiciones del hueco inicial** (aprovechando la simetría
+del tablero, basta con un cuadrante representativo). Para cada hueco
+se ejecuta beam search iterativo (β creciente 100→300→800→1500) +
+conectividad en modo relajado.
 
-Datos en `senku/resultados/huecos_v3_v5.csv`. Las configuraciones
-resolubles se han guardado además como ficheros PDDL
-(`variante_3_hueco_0_2.pddl`, `variante_5_hueco_0_3.pddl`).
+**Resumen por variante**:
 
-La variante 1 sí admite terminar en el propio hueco central (el problema
-*complementario* clásico). Las variantes 2 (cuadrado 5×5) y 4 (diamante)
-no se resuelven: son tableros ortogonales pequeños cuyo espacio
-alcanzable se bloquea muy pronto (una BFS exhaustiva sobre un 4×4 análogo
-confirma su irresolubilidad estructural).
+| # | Casillas | Huecos probados | Resolubles | % | Min piezas absoluto |
+|---|---:|---:|---:|---:|---:|
+| 1 | 33 | 12 | **12** | **100,0%** | 1 |
+| 2 | 25 |  9 |   4   |  44,4%  | 1 |
+| 3 | 37 | 13 |   6   |  46,2%  | 1 |
+| 4 | 25 | 10 |  **0**  | **0,0%** | **4** |
+| 5 | 45 | 16 |   7   |  43,8%  | 1 |
+
+**Conclusiones del barrido**:
+
+- **V1 (cruz inglesa)**: 100% de huecos resolubles — beam search +
+  conectividad resuelve la cruz inglesa desde *cualquier* posición
+  inicial del hueco, incluido el centro (31 movimientos en todos los
+  casos). Es el tablero ideal.
+- **V2 (5×5)**: 4/9 huecos resolubles (23 movs). Los huecos centrales
+  no funcionan, pero los huecos como (0,2), (1,2), (2,0), (2,1) sí.
+- **V3 (octogonal)**: 6/13 huecos resolubles (35 movs). El centro
+  (3,3) no funciona, pero sí los huecos del brazo: (0,2), (1,3), (2,0),
+  (2,3), (3,1), (3,2).
+- **V4 (diamante)**: 0/10 huecos resolubles (**estructuralmente
+  irresoluble** desde cualquier posición; mínimo absoluto = 4
+  piezas).
+- **V5 (cruz extendida)**: 7/16 huecos resolubles (43 movs). El centro
+  (4,4) no funciona, pero sí (0,3), (1,3), (2,3), (3,0), (3,1), (3,2),
+  (3,3).
+
+Datos completos en `senku/resultados/huecos_completo.csv` y resumen en
+`senku/resultados/huecos_resumen.csv`. El barrido se reproduce con
+`python senku/scripts/experimento_huecos_completo.py`.
+
+**Mejora técnica**: beam search ahora reporta el **mínimo de piezas
+alcanzado** (atributo `min_piezas_alcanzadas` en `Resultado`). Cuando
+no se llega a 1 pieza, este valor indica cuánto se aproximó. Para V4
+todos los huecos dejan ≥4 piezas, confirmando irresolubilidad
+estructural (compatible con la BFS exhaustiva: el espacio entero del
+diamante no contiene ningún estado con menos de 4 piezas).
 
 ### 7.5 Interpretación
 

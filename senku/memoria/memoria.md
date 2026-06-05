@@ -195,15 +195,14 @@ de la Práctica 4 (`OneshotPlanner(name="fast-downward")`):
 
 | # | Estado de FD                  | Movs | Tiempo (s) |
 |---|-------------------------------|-----:|-----------:|
-| 1 | `SOLVED_SATISFICING`          |   31 |     33,3   |
-| 2 | `UNSOLVABLE_INCOMPLETELY`     |    — |     79,6   |
-| 3 | `TIMEOUT` (>90 s)             |    — |    >90     |
-| 4 | error de decodificación (*)   |    — |     12,5   |
-| 5 | `TIMEOUT` (>180 s)            |    — |   >180     |
+| 1 | `SOLVED_SATISFICING`          |   31 |     10,6   |
+| 2 | `UNSOLVABLE_INCOMPLETELY`     |    — |     22,1   |
+| 3 | `TIMEOUT` (60 s)              |    — |    >60     |
+| 4 | `UNSOLVABLE_INCOMPLETELY`     |    — |      3,2   |
+| 5 | `TIMEOUT` (60 s)              |    — |    >60     |
 
-(*) Error conocido de `up-fast-downward 0.5.2` en Windows al decodificar
-la salida de error de FD; afecta a la entrega pero no a la corrección
-del enfoque.
+Datos tras aplicar `parche_fd.py`, que neutraliza un bug de
+`up-fast-downward 0.5.2` en Windows al decodificar la salida de FD.
 
 **Hallazgos clave**:
 - La **variante 1 (cruz inglesa)** *es resoluble*: Fast Downward
@@ -250,44 +249,53 @@ partidas aleatorias** sobre la cruz inglesa terminaron con un mínimo de
 2 piezas (ninguna llegó a 1). Esto evidencia que las soluciones del
 Senku son rarísimas y que la pagoda, pese a ser admisible, no las guía.
 
-### 4.4 Heurística de conectividad: beam search sí resuelve
+### 4.4 Heurística de conectividad + beam iterativo
 
 La clave fue cambiar la heurística. La **heurística de conectividad**
 ordena los estados por número de componentes conexas de piezas
-(adyacencia ortogonal). Con ella, beam search resuelve la cruz inglesa
-y, eligiendo bien el hueco inicial, las tres variantes obligatorias.
-Criterio de meta: relajado (una pieza en cualquier sitio), tal y como
-aclaró el profesor.
+(adyacencia ortogonal). Combinada con **beam search iterativo**
+(anchura creciente automática 100→300→800→1500), permite resolver la
+cruz inglesa desde el centro y, eligiendo bien el hueco inicial, las
+tres variantes obligatorias. Criterio de meta: relajado (una pieza en
+cualquier sitio).
 
-| # | Hueco inicial | β | Éxito | Movs | Nodos | T (s) |
-|---|---------------|---|:-----:|-----:|------:|------:|
-| 1 | (3,3) centro  | 300 | ✓ | 31 | 7 783 | 3,5 |
-| 2 | (2,2) centro  | 500 | ✗ | — | 34 532 | 8,6 |
-| 3 | (3,3) centro  | 800 | ✗ | — | 93 775 | 59,7 |
-| 4 | (3,3) centro  | 500 | ✗ | — | 28 348 | 4,2 |
-| 5 | (4,4) centro  | 800 | ✗ | — | 113 060 | 110,7 |
+### 4.5 Estudio exhaustivo de la posición del hueco inicial
 
-### 4.5 Estudio de la posición del hueco inicial
+Se realiza un barrido sistemático probando **todas las posiciones del
+hueco inicial** en las 5 variantes (aprovechando la simetría del
+tablero, basta con un cuadrante representativo).
 
-El profesor valora explorar distintas posiciones del hueco inicial. Al
-hacerlo, **las tres variantes obligatorias (1, 3 y 5) resultan
-resolubles** por beam search, aunque no siempre desde el centro:
+**Resumen agregado**:
 
-| # | Hueco inicial | Éxito | Movs | Nodos | T (s) |
-|---|---------------|:-----:|-----:|------:|------:|
-| 3 | (3,3) centro  | ✗ | — | 53 423 | 33,5 |
-| 3 | **(0,2)**     | ✓ | 35 | 17 381 | 11,2 |
-| 3 | (2,4)         | ✗ | — | 53 495 | 36,9 |
-| 5 | (4,4) centro  | ✗ | — | 64 159 | 61,4 |
-| 5 | **(0,3)**     | ✓ | 43 | 21 674 | 20,2 |
-| 5 | **(3,6)**     | ✓ | 43 | 22 276 | 21,7 |
+| # | Casillas | Huecos probados | Resolubles | %      | Min piezas |
+|---|---------:|----------------:|-----------:|-------:|-----------:|
+| 1 | 33       | 12              | **12**     | **100,0%** | 1     |
+| 2 | 25       |  9              |  4         |  44,4% | 1          |
+| 3 | 37       | 13              |  6         |  46,2% | 1          |
+| 4 | 25       | 10              | **0**      | **0,0%** | **4**     |
+| 5 | 45       | 16              |  7         |  43,8% | 1          |
 
-Las variantes 2 (cuadrado 5×5) y 4 (diamante) no se resuelven; son
-tableros ortogonales pequeños cuyo espacio alcanzable se bloquea muy
-pronto (BFS exhaustiva sobre un tablero 4×4 análogo confirma su
-irresolubilidad). La variante 1 sí termina en el propio hueco central
-(problema complementario clásico), mientras que en las variantes 3 y 5
-es necesario partir de un hueco en el brazo para hallar solución.
+**Hallazgos**:
+
+- **V1**: resoluble desde *cualquier* hueco (100%). 31 movimientos
+  en todos los casos.
+- **V2**: el hueco central es irresoluble, pero (0,2), (1,2), (2,0),
+  (2,1) sí lo son (23 movimientos).
+- **V3**: el hueco central es irresoluble; (0,2), (1,3), (2,0),
+  (2,3), (3,1), (3,2) sí lo son (35 movimientos).
+- **V4**: estructuralmente irresoluble desde cualquier hueco; el
+  mínimo absoluto alcanzable es 4 piezas (compatible con BFS
+  exhaustiva).
+- **V5**: el hueco central es irresoluble; (0,3), (1,3), (2,3),
+  (3,0)–(3,3) sí lo son (43 movimientos).
+
+Datos completos en `senku/resultados/huecos_completo.csv`. Resumen en
+`senku/resultados/huecos_resumen.csv`. Reproducible con
+`python senku/scripts/experimento_huecos_completo.py`.
+
+Beam search ahora reporta el **mínimo de piezas alcanzado**
+(atributo `min_piezas_alcanzadas` en `Resultado`). Cuando no llega a
+1 pieza, este valor diagnostica la dificultad de la configuración.
 
 ---
 

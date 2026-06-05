@@ -21,7 +21,19 @@ from .estado import Estado, Movimiento, ProblemaSenku, reconstruye_camino
 
 @dataclass
 class Resultado:
-    """Resultado de una busqueda en el espacio de estados."""
+    """Resultado de una busqueda en el espacio de estados.
+
+    Atributos:
+        exito: True si se alcanzo la meta.
+        movimientos: secuencia del plan (vacia si no hubo exito).
+        estados: lista de estados del plan (incluye el inicial).
+        nodos_expandidos: contador de estados expandidos.
+        tiempo_segundos: tiempo total de la busqueda.
+        parametros: metadatos del algoritmo (beta, intentos, etc.).
+        min_piezas_alcanzadas: numero minimo de piezas que aparecio en
+            algun estado de la busqueda (util cuando no se llega a 1
+            para saber cuanto se aproximo).
+    """
 
     exito: bool
     movimientos: List[Movimiento] = field(default_factory=list)
@@ -29,13 +41,17 @@ class Resultado:
     nodos_expandidos: int = 0
     tiempo_segundos: float = 0.0
     parametros: dict = field(default_factory=dict)
+    min_piezas_alcanzadas: Optional[int] = None
 
     def __str__(self) -> str:
         cabecera = "Solucion encontrada" if self.exito else "Sin solucion"
+        extra = ""
+        if not self.exito and self.min_piezas_alcanzadas is not None:
+            extra = f" | min_piezas={self.min_piezas_alcanzadas}"
         return (
             f"{cabecera} | movimientos={len(self.movimientos)} "
             f"| nodos={self.nodos_expandidos} | tiempo={self.tiempo_segundos:.3f}s "
-            f"| params={self.parametros}"
+            f"| params={self.parametros}{extra}"
         )
 
 
@@ -169,6 +185,8 @@ def beam_search(
     frontera: List[Estado] = [problema.inicial]
     expandidos = 0
     iteraciones = 0
+    # Tracking del estado mas cercano a la meta encontrado (con menos piezas).
+    min_piezas = len(problema.inicial)
 
     while frontera:
         iteraciones += 1
@@ -183,6 +201,8 @@ def beam_search(
                 # Solo registramos padre la primera vez que vemos el estado
                 if sucesor not in padres:
                     padres[sucesor] = (movimiento, estado)
+                if len(sucesor) < min_piezas:
+                    min_piezas = len(sucesor)
                 if problema.es_meta(sucesor):
                     estados, movimientos = reconstruye_camino(padres, sucesor)
                     return Resultado(
@@ -197,6 +217,7 @@ def beam_search(
                             "iteraciones": iteraciones,
                             "usar_visitados": usar_visitados,
                         },
+                        min_piezas_alcanzadas=len(sucesor),
                     )
                 if usar_visitados:
                     visitados.add(sucesor)
@@ -212,6 +233,7 @@ def beam_search(
         exito=False,
         nodos_expandidos=expandidos,
         tiempo_segundos=time.perf_counter() - inicio,
+        min_piezas_alcanzadas=min_piezas,
         parametros={
             "algoritmo": "BeamSearch",
             "beta": beta,
@@ -240,6 +262,7 @@ def beam_search_con_reinicios(
     mejor_fallo = None
     inicio_total = time.perf_counter()
     nodos_totales = 0
+    min_piezas_globales = len(problema.inicial)
     for intento in range(intentos):
         r = beam_search(
             problema=problema,
@@ -250,6 +273,8 @@ def beam_search_con_reinicios(
             semilla=intento,
         )
         nodos_totales += r.nodos_expandidos
+        if r.min_piezas_alcanzadas is not None:
+            min_piezas_globales = min(min_piezas_globales, r.min_piezas_alcanzadas)
         if r.exito:
             r.tiempo_segundos = time.perf_counter() - inicio_total
             r.nodos_expandidos = nodos_totales
@@ -260,5 +285,67 @@ def beam_search_con_reinicios(
     if mejor_fallo is not None:
         mejor_fallo.tiempo_segundos = time.perf_counter() - inicio_total
         mejor_fallo.nodos_expandidos = nodos_totales
+        mejor_fallo.min_piezas_alcanzadas = min_piezas_globales
         mejor_fallo.parametros["intentos_totales"] = intentos
     return mejor_fallo  # type: ignore[return-value]
+
+
+def beam_search_iterativo(
+    problema: ProblemaSenku,
+    heuristica: Callable[[Estado], float],
+    betas: Optional[List[int]] = None,
+    intentos_por_beta: int = 3,
+    iteraciones_maximas: Optional[int] = None,
+    usar_visitados: bool = True,
+) -> Resultado:
+    """Beam search con anchura creciente.
+
+    Variante natural del beam search: si beam con una anchura dada
+    falla, se reintenta con una anchura mayor. Esto se conoce como
+    \"iterative widening beam search\" en la literatura y mantiene la
+    estructura del algoritmo original.
+
+    Comienza con el beta mas pequeno (rapido) y solo invierte mas
+    presupuesto si el problema lo necesita. Esto reduce el coste medio
+    sobre instancias faciles a la vez que mantiene la cobertura sobre
+    instancias dificiles.
+
+    Args:
+        betas: lista creciente de anchuras a probar. Por defecto
+            [100, 300, 800, 1500].
+        intentos_por_beta: numero de reinicios estocasticos por cada
+            anchura.
+    """
+    if betas is None:
+        betas = [100, 300, 800, 1500]
+    inicio = time.perf_counter()
+    nodos_totales = 0
+    min_piezas_globales = len(problema.inicial)
+    ultimo = None
+    for beta in betas:
+        r = beam_search_con_reinicios(
+            problema=problema,
+            heuristica=heuristica,
+            beta=beta,
+            intentos=intentos_por_beta,
+            iteraciones_maximas=iteraciones_maximas,
+            usar_visitados=usar_visitados,
+        )
+        nodos_totales += r.nodos_expandidos
+        if r.min_piezas_alcanzadas is not None:
+            min_piezas_globales = min(min_piezas_globales, r.min_piezas_alcanzadas)
+        if r.exito:
+            r.tiempo_segundos = time.perf_counter() - inicio
+            r.nodos_expandidos = nodos_totales
+            r.parametros["algoritmo"] = "BeamSearchIterativo"
+            r.parametros["beta_exitoso"] = beta
+            r.parametros["betas_probados"] = betas[: betas.index(beta) + 1]
+            return r
+        ultimo = r
+    if ultimo is not None:
+        ultimo.tiempo_segundos = time.perf_counter() - inicio
+        ultimo.nodos_expandidos = nodos_totales
+        ultimo.min_piezas_alcanzadas = min_piezas_globales
+        ultimo.parametros["algoritmo"] = "BeamSearchIterativo"
+        ultimo.parametros["betas_probados"] = betas
+    return ultimo  # type: ignore[return-value]

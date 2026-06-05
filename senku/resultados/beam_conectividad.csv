@@ -1,6 +1,11 @@
-variante,casillas,hueco,beta,exito,movimientos,nodos,tiempo_s
-1,33,"(3,3) centro",300,True,31,7783,3.5
-2,25,"(2,2) centro",500,False,0,34532,8.6
-3,37,"(3,3) centro",800,False,0,93775,59.7
-4,25,"(3,3) centro",500,False,0,28348,4.2
-5,45,"(4,4) centro",800,False,0,113060,110.7
+variante,casillas,modo,beta,intentos,exito,movimientos,nodos,tiempo_s
+1,33,relajado,300,6,True,31,7783,1.2
+1,33,estricto,300,6,True,31,7810,1.2
+2,25,relajado,800,6,False,0,79680,15.8
+2,25,estricto,800,6,False,0,79545,18.2
+3,37,relajado,1500,6,False,0,258522,151.5
+3,37,estricto,1500,6,False,0,258499,154.4
+4,25,relajado,800,6,False,0,66264,8.2
+4,25,estricto,800,6,False,0,66295,8.5
+5,45,relajado,2000,6,False,0,432712,364.2
+5,45,estricto,2000,6,False,0,432742,349.9
