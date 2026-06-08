@@ -9,5 +9,13 @@
         "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.log": true,
         "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.gz": true,
         "**/c:\\Users\\betis\\Desktop\\trabajo IA\\Trabajo-IA\\senku\\memoria\\memoria.out": true
-    }
+    },
+    "cSpell.words": [
+        "senku"
+    ],
+    "python.testing.pytestArgs": [
+        "senku"
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true
 }

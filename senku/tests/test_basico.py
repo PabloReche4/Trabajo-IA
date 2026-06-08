@@ -132,12 +132,13 @@ def test_beam_resuelve_caso_trivial():
 
 def test_beam_conectividad_resuelve_cruz_inglesa():
     """La heuristica de conectividad permite a beam search resolver la
-    cruz inglesa (variante 1), la mas representativa del Senku clasico.
+    cruz inglesa (variante 4 segun la numeracion de la Figura 3 del
+    enunciado), la mas representativa del Senku clasico.
     Es el resultado central del trabajo."""
     from senku.src.heuristicas import heuristica_conectividad
     from senku.src.busqueda import beam_search_con_reinicios
 
-    problema = ProblemaSenku.desde_tablero(TABLEROS[1], modo_relajado=True)
+    problema = ProblemaSenku.desde_tablero(TABLEROS[4], modo_relajado=True)
     h = heuristica_conectividad(problema)
     resultado = beam_search_con_reinicios(
         problema, h, beta=300, intentos=6, iteraciones_maximas=80
@@ -158,13 +159,14 @@ def test_beam_search_reporta_min_piezas():
     assert r.min_piezas_alcanzadas == 1
 
 
-def test_beam_iterativo_resuelve_v1():
+def test_beam_iterativo_resuelve_cruz_inglesa():
     """beam_search_iterativo, partiendo de un beta pequeno, debe acabar
-    encontrando solucion a la cruz inglesa."""
+    encontrando solucion a la cruz inglesa (variante 4 segun la
+    numeracion del enunciado)."""
     from senku.src.heuristicas import heuristica_conectividad
     from senku.src.busqueda import beam_search_iterativo
 
-    problema = ProblemaSenku.desde_tablero(TABLEROS[1], modo_relajado=True)
+    problema = ProblemaSenku.desde_tablero(TABLEROS[4], modo_relajado=True)
     h = heuristica_conectividad(problema)
     resultado = beam_search_iterativo(
         problema, h, betas=[100, 300, 800], intentos_por_beta=3

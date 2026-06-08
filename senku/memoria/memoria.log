@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  27 MAY 2026 17:34
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  7 JUN 2026 17:20
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -328,7 +328,7 @@ LaTeX Font Info:    Trying to load font information for T1+ptm on input line 11
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1ptm.fd
 File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
 ))
-No file memoria.aux.
+(memoria.aux)
 \openout1 = `memoria.aux'.
 
 LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 39.
@@ -345,6 +345,7 @@ LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
 LaTeX Font Info:    ... okay on input line 39.
 LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
 LaTeX Font Info:    ... okay on input line 39.
+
 -- Lines per column: 56 (exact).
 
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mk
@@ -411,180 +412,193 @@ LaTeX Font Info:    Trying to load font information for T1+pcr on input line 68
  (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1pcr.fd
 File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
 )
-Underfull \hbox (badness 6047) in paragraph at lines 84--87
+Underfull \hbox (badness 6047) in paragraph at lines 99--102
 []\T1/ptm/b/it/9 Palabras clave\T1/ptm/b/n/9 ---Inteligencia Ar-ti-fi-cial, pla
 n-i-fi-cación au-
  []
 
 
-LaTeX Warning: Citation `enunciado' on page 1 undefined on input line 94.
-
-
-LaTeX Warning: Citation `pddl-wiki' on page 1 undefined on input line 103.
-
-
-LaTeX Warning: Reference `sec:prelim' on page 1 undefined on input line 118.
-
-
-LaTeX Warning: Reference `sec:meto' on page 1 undefined on input line 120.
-
-
-LaTeX Warning: Reference `sec:resultados' on page 1 undefined on input line 123
-.
-
-
-LaTeX Warning: Reference `sec:conclusiones' on page 1 undefined on input line 1
-25.
-
-LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <10> not available
-(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 133.
-
-LaTeX Warning: Citation `pddl-wiki' on page 1 undefined on input line 136.
-
-
-LaTeX Warning: Citation `up' on page 1 undefined on input line 141.
-
-
-LaTeX Warning: Citation `fastdownward' on page 1 undefined on input line 149.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 141--151
-[]\T1/ptm/m/n/10 La bib-lioteca Python \T1/pcr/m/n/10 unified-planning \T1/ptm/
-m/n/10 [\T1/ptm/b/n/10 ?\T1/ptm/m/n/10 ]
+Underfull \hbox (badness 5954) in paragraph at lines 153--159
+[]\T1/ptm/m/n/10 Un sis-tema en Python, basado en la bib-lioteca
  []
 
-
-Underfull \hbox (badness 4366) in paragraph at lines 141--151
-\T1/ptm/m/n/10 pro-por-ciona una capa de ab-strac-ción que per-mite (i)
- []
-
-
-Underfull \hbox (badness 2573) in paragraph at lines 141--151
-\T1/ptm/m/n/10 leer y es-cribir ficheros PDDL me-di-ante \T1/pcr/m/n/10 PDDLRea
-der
- []
-
-
-Underfull \hbox (badness 3989) in paragraph at lines 141--151
-\T1/ptm/m/n/10 y \T1/pcr/m/n/10 PDDLWriter\T1/ptm/m/n/10 ; (ii) con-struir prob
--le-mas di-rec-ta-mente
- []
-
-
-Underfull \hbox (badness 1502) in paragraph at lines 141--151
-\T1/ptm/m/n/10 en código me-di-ante \T1/pcr/m/n/10 Problem\T1/ptm/m/n/10 , \T1/
-pcr/m/n/10 Fluent\T1/ptm/m/n/10 , \T1/pcr/m/n/10 UserType \T1/ptm/m/n/10 e
- []
-
-
-Underfull \hbox (badness 1796) in paragraph at lines 141--151
-\T1/pcr/m/n/10 InstantaneousAction\T1/ptm/m/n/10 ; y (iii) in-vo-car plan-i-fi-
-cadores
- []
-
-! Undefined control sequence.
-l.155 ...n de pesos $\pi:\text{Casillas}\to\mathbb
-                                                  {Z}_{\geq 1}$ es una
-? start memoria.pdf
-OK, entering \scrollmode...
 [1{C:/Users/betis/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/be
 tis/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 
 ]
+LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <10> not available
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 189.
 
-LaTeX Warning: Citation `senku-counts' on page 2 undefined on input line 171.
+Underfull \hbox (badness 10000) in paragraph at lines 203--215
+[]\T1/ptm/m/n/10 La bib-lioteca Python \T1/pcr/m/n/10 unified-planning \T1/ptm/
+m/n/10 [3]
+ []
 
 
-LaTeX Warning: Reference `pcd:dominio-pddl' on page 2 undefined on input line 1
-91.
+Underfull \hbox (badness 4366) in paragraph at lines 203--215
+\T1/ptm/m/n/10 pro-por-ciona una capa de ab-strac-ción que per-mite (i)
+ []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 230--234
+Underfull \hbox (badness 2573) in paragraph at lines 203--215
+\T1/ptm/m/n/10 leer y es-cribir ficheros PDDL me-di-ante \T1/pcr/m/n/10 PDDLRea
+der
+ []
+
+
+Underfull \hbox (badness 3989) in paragraph at lines 203--215
+\T1/ptm/m/n/10 y \T1/pcr/m/n/10 PDDLWriter\T1/ptm/m/n/10 ; (ii) con-struir prob
+-le-mas di-rec-ta-mente
+ []
+
+
+Underfull \hbox (badness 1502) in paragraph at lines 203--215
+\T1/ptm/m/n/10 en código me-di-ante \T1/pcr/m/n/10 Problem\T1/ptm/m/n/10 , \T1/
+pcr/m/n/10 Fluent\T1/ptm/m/n/10 , \T1/pcr/m/n/10 UserType \T1/ptm/m/n/10 e
+ []
+
+
+Underfull \hbox (badness 1796) in paragraph at lines 203--215
+\T1/pcr/m/n/10 InstantaneousAction\T1/ptm/m/n/10 ; y (iii) in-vo-car plan-i-fi-
+cadores
+ []
+
+
+Underfull \hbox (badness 2726) in paragraph at lines 203--215
+\T1/ptm/m/n/10 ex-ter-nos a través de \T1/pcr/m/n/10 OneshotPlanner\T1/ptm/m/n/
+10 . La prin-ci-pal
+ []
+
+! Undefined control sequence.
+l.272 $\pi:\text{Casillas}\to\mathbb
+                                    {Z}_{\geq 1}$ es una \emph{funciÃ³n pago...
+
+? 
+[2]
+Underfull \hbox (badness 10000) in paragraph at lines 344--352
 []\T1/ptm/m/n/10 Para cada vari-ante se gen-era un
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 230--234
+Underfull \hbox (badness 10000) in paragraph at lines 344--352
 \T1/ptm/m/n/10 fichero de prob-lema me-di-ante el co-mando
  []
 
 
-LaTeX Warning: Reference `tab:variantes' on page 2 undefined on input line 240.
+Underfull \hbox (badness 10000) in paragraph at lines 344--352
+[][]\T1/pcr/m/n/10 python -m senku.src.cli generar[]\T1/ptm/m/n/10 , que es-cri
+be
+ []
 
 
+Underfull \hbox (badness 10000) in paragraph at lines 363--368
+\T1/pcr/m/n/10 mover-vertical-arriba\T1/ptm/m/n/10 ,
+ []
 
-LaTeX Warning: Reference `pcd:beam' on page 2 undefined on input line 301.
 
+Underfull \hbox (badness 10000) in paragraph at lines 363--368
+\T1/pcr/m/n/10 mover-vertical-abajo\T1/ptm/m/n/10 ) con pred-i-ca-dos
+ []
+
+
+Underfull \hbox (badness 4013) in paragraph at lines 363--368
+\T1/ptm/m/n/10 el número de ac-ciones del do-minio sin apor-tar
+ []
+
+
+Underfull \hbox (badness 1688) in paragraph at lines 373--376
+[]\T1/ptm/m/n/10 La de-cisión fi-nal ---\T1/pcr/m/n/10 salto \T1/ptm/m/n/10 com
+o he-cho es-tático del
+ []
+
+[3]
 ! Undefined control sequence.
-l.309   mientras $F \neq \varnothing
+l.519   mientras $F \neq \varnothing
                                     $ hacer \\+
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
+? 
 
-
-Overfull \hbox (18.89693pt too wide) in paragraph at lines 305--320
+Overfull \hbox (18.89693pt too wide) in paragraph at lines 515--530
  [] 
  []
 
-[2]
-Underfull \hbox (badness 5189) in paragraph at lines 334--338
+[4]
+Underfull \hbox (badness 5189) in paragraph at lines 569--573
 \T1/ptm/m/it/10 .pddl, uno con el do-minio y otro con una in-stan-
  []
 
 
-Underfull \hbox (badness 3579) in paragraph at lines 334--338
+Underfull \hbox (badness 3579) in paragraph at lines 569--573
 \T1/ptm/m/it/10 cia del prob-lema''\T1/ptm/m/n/10 --- se cumple me-di-ante un m
 ó-dulo
  []
 
 
-LaTeX Warning: Reference `tab:fd-resultados' on page 3 undefined on input line 
-363.
-
-
-LaTeX Warning: Citation `senku-counts' on page 3 undefined on input line 365.
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 359--372
+Underfull \hbox (badness 10000) in paragraph at lines 594--607
 []\T1/ptm/m/n/10 Antes de eval-uar la im-ple-mentación propia, se
  []
 
 
-Underfull \hbox (badness 1939) in paragraph at lines 359--372
+Underfull \hbox (badness 1939) in paragraph at lines 594--607
 \T1/ptm/m/n/10 lanzó Fast Down-ward so-bre cada vari-ante a través de
  []
 
 
-LaTeX Warning: Reference `tab:propios' on page 3 undefined on input line 396.
+LaTeX Warning: Reference `tab:aleatorio' on page 5 undefined on input line 686.
 
-[3]
+
+[5]
+
+LaTeX Font Warning: Font shape `T1/ptm/m/scit' undefined
+(Font)              using `T1/ptm/m/it' instead on input line 756.
+
+
+LaTeX Warning: Reference `tab:huecos-detalle' on page 6 undefined on input line
+ 786.
+
+[6] [7]
+Underfull \hbox (badness 3872) in paragraph at lines 1005--1012
+[]\T1/ptm/m/n/10 Todo el código, los ficheros PDDL, los note-books
+ []
+
+
+Underfull \hbox (badness 2197) in paragraph at lines 1005--1012
+\T1/ptm/m/n/10 de ex-per-i-mentación y los CSV con los re-sul-ta-dos es-
+ []
+
+
+Underfull \hbox (badness 2961) in paragraph at lines 1005--1012
+\T1/ptm/m/n/10 Los ex-per-i-men-tos se re-pro-ducen eje-cu-tando los scripts
+ []
+
+
+Underfull \hbox (badness 3058) in paragraph at lines 1034--1037
+[]\T1/ptm/m/n/10 Detectar y solu-cionar el bug de cod-i-fi-cación de
+ []
+
+
+Underfull \hbox (badness 1354) in paragraph at lines 1034--1037
+\T1/pcr/m/n/10 up-fast-downward 0.5.2 \T1/ptm/m/n/10 me-di-ante el mó-dulo
+ []
+
 ! Undefined control sequence.
-l.504 \url
-          {https://planning.wiki/}, consultado en mayo de 2026.
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
+l.1056 \url
+           {https://planning.wiki/}, consultado en mayo de 2026.
+? 
 
-
-Underfull \hbox (badness 10000) in paragraph at lines 503--505
+Underfull \hbox (badness 10000) in paragraph at lines 1055--1057
 []\T1/ptm/m/n/8 Planning Wiki, ``Plan-ning Do-main Def-i-ni-tion Lan-guage,''
  []
 
 ! Undefined control sequence.
-l.508 DocumentaciÃ³n: \url
-                          {https://unified-planning.readthedocs.io}.
-The control sequence at the end of the top line
-of your error message was never \def'ed. If you have
-misspelled it (e.g., `\hobx'), type `I' and the correct
-spelling (e.g., `I\hbox'). Otherwise just continue,
-and I'll forget about whatever was undefined.
-
+l.1060 DocumentaciÃ³n: \url
+                           {https://unified-planning.readthedocs.io}.
+? 
+LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
+070.
+(C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ts1ptm.fd
+File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
+)
 
 ** Conference Paper **
 Before submitting the final camera ready copy, remember to:
@@ -596,7 +610,7 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[4] (memoria.aux)
+[8] (memoria.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
@@ -610,11 +624,11 @@ LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
 
  ) 
 Here is how much of TeX's memory you used:
- 5965 strings out of 467871
- 105070 string characters out of 5418376
- 537720 words of memory out of 5000000
- 34736 multiletter control sequences out of 15000+600000
- 751747 words of font info for 159 fonts, out of 8000000 for 9000
+ 6007 strings out of 467871
+ 105765 string characters out of 5418376
+ 536999 words of memory out of 5000000
+ 34770 multiletter control sequences out of 15000+600000
+ 754217 words of font info for 162 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  59i,17n,76p,324b,391s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/
@@ -622,25 +636,28 @@ cmex10.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/ams
 fonts/cm/cmmi10.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/p
 ublic/amsfonts/cm/cmmi7.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts
 /type1/public/amsfonts/cm/cmmi8.pfb><C:/Users/betis/AppData/Local/Programs/MiKT
-eX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/betis/AppData/Local/Progr
-ams/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/betis/AppData/Loca
-l/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/betis/AppDa
-ta/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb><C:/Users/beti
-s/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy10.pfb><C:/U
-sers/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmsy6.p
-fb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm
-/cmsy7.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/ams
-fonts/cm/cmsy8.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/ur
-w/courier/ucrb8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/
-urw/courier/ucrr8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type
-1/urw/courier/ucrro8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/t
-ype1/urw/times/utmb8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/t
-ype1/urw/times/utmbi8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/
-type1/urw/times/utmr8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/
-type1/urw/times/utmri8a.pfb>
-Output written on memoria.pdf (4 pages, 239044 bytes).
+eX/fonts/type1/public/amsfonts/cm/cmmi9.pfb><C:/Users/betis/AppData/Local/Progr
+ams/MiKTeX/fonts/type1/public/amsfonts/cm/cmr10.pfb><C:/Users/betis/AppData/Loc
+al/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr6.pfb><C:/Users/betis/AppD
+ata/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr7.pfb><C:/Users/bet
+is/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr8.pfb><C:/Us
+ers/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/cmr9.pfb
+><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/c
+msy10.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsf
+onts/cm/cmsy6.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/pub
+lic/amsfonts/cm/cmsy7.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/t
+ype1/public/amsfonts/cm/cmsy8.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX
+/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/betis/AppData/Local/Program
+s/MiKTeX/fonts/type1/urw/courier/ucrb8a.pfb><C:/Users/betis/AppData/Local/Progr
+ams/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/betis/AppData/Local/Pro
+grams/MiKTeX/fonts/type1/urw/courier/ucrro8a.pfb><C:/Users/betis/AppData/Local/
+Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/betis/AppData/Local/
+Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/betis/AppData/Local
+/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/betis/AppData/Local
+/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
+Output written on memoria.pdf (8 pages, 303607 bytes).
 PDF statistics:
- 111 PDF objects out of 1000 (max. 8388607)
+ 140 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

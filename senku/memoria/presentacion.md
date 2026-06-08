@@ -61,16 +61,16 @@ Tiempo objetivo: 10 minutos. Cada miembro presenta 5 minutos.
 
 ## Slide 5 — Las 5 variantes implementadas (45 s)
 
-| # | Nombre              | Casillas | Obligatoria |
-|---|---------------------|---------:|-------------|
-| 1 | Cruz inglesa        |       33 | ✅           |
-| 2 | Cuadrado 5×5        |       25 | —           |
-| 3 | Octogonal europeo   |       37 | ✅           |
-| 4 | Diamante            |       25 | —           |
-| 5 | Cruz extendida      |       45 | ✅           |
+| # | Nombre                          | Caja | Cas. | Obligatoria |
+|---|---------------------------------|------|-----:|-------------|
+| 1 | Octógono                        | 7×7  |   37 | ✅           |
+| 2 | Cruz griega grande              | 9×9  |   45 | —           |
+| 3 | Cruz asimétrica                 | 8×8  |   39 | ✅           |
+| 4 | Cruz griega clásica (inglesa)   | 7×7  |   33 | —           |
+| 5 | Rombo / diamante                | 9×9  |   41 | ✅           |
 
 *Las 2 y 4 son auxiliares para experimentación; 1, 3 y 5 son las
-exigidas por el enunciado.*
+exigidas por el enunciado (Figura 3, Sección 3.2).*
 
 ---
 
@@ -154,19 +154,21 @@ return fallo
 
 ## Slide 10 — Resultados (1 min)
 
-Beam search **con la heurística de conectividad** resuelve las tres
-variantes obligatorias (eligiendo bien el hueco inicial):
+Beam search **con la heurística de conectividad + iterativo** resuelve
+las tres variantes obligatorias. Barrido exhaustivo de huecos:
 
-| Var. | Hueco       | β   | Movs | Nodos | t (s) |
-|-----:|-------------|----:|-----:|------:|------:|
-| 1    | (3,3)centro | 300 |  31  | 7 783 |  3,5  |
-| 3    | (0,2)       | 600 |  35  |17 381 | 11,2  |
-| 5    | (0,3)       | 600 |  43  |21 674 | 20,2  |
+| Var. | Tablero            | Casillas | Resolubles | %    |
+|-----:|--------------------|---------:|-----------:|-----:|
+| 1    | Octógono           | 37       | 6/13       | 46,2 |
+| 3    | Cruz asimétrica    | 39       | **10/10**  | **100** |
+| 5    | Rombo              | 41       | 3/15       | 20,0 |
 
 - Con **pagoda**: ninguna variante se resuelve (ni con β = 2000).
-- **La posición del hueco inicial es decisiva**: V3 y V5 no se
-  resuelven desde el centro, sí desde un brazo (problema complementario).
-- Fast Downward (línea base) resuelve V1 en 33 s, confirma V2 irresoluble.
+- **La posición del hueco inicial es decisiva**: en V1 y V5 algunos
+  huecos no admiten plan; V3 es resoluble desde cualquier hueco.
+- **Beam search complementa a Fast Downward**: FD resuelve V3 (8s) y
+  V4 (18s) pero falla en V1, V2 y V5 incluso con 300s; nuestro beam
+  search + conectividad sí encuentra plan en V1 y V5.
 
 ---
 
@@ -191,11 +193,11 @@ variantes obligatorias (eligiendo bien el hueco inicial):
 # Generar los PDDL
 python -m senku.src.cli generar
 
-# Resolver una variante
+# Resolver variante 3 (cruz asimétrica, obligatoria)
 python -m senku.src.cli resolver `
     --dominio senku/pddl/dominio_senku.pddl `
-    --problema senku/pddl/problemas/variante_2.pddl `
-    --beta 500 --intentos 5 --relajado
+    --problema senku/pddl/problemas/variante_3.pddl `
+    --algoritmo beam-iter --intentos 4 --relajado
 ```
 
 ---

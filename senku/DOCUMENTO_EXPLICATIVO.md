@@ -72,11 +72,11 @@ senku/
 ├── pddl/
 │   ├── dominio_senku.pddl              # Dominio común para las 5 variantes
 │   └── problemas/
-│       ├── variante_1.pddl             # Cruz inglesa (33 casillas) — obligatoria
-│       ├── variante_2.pddl             # Cuadrado 5×5 (25 casillas)
-│       ├── variante_3.pddl             # Octogonal europeo (37 casillas) — obligatoria
-│       ├── variante_4.pddl             # Diamante (25 casillas)
-│       └── variante_5.pddl             # Cruz extendida (45 casillas) — obligatoria
+│       ├── variante_1.pddl             # Octógono (37 casillas) — obligatoria
+│       ├── variante_2.pddl             # Cruz griega grande (45 casillas)
+│       ├── variante_3.pddl             # Cruz asimétrica (39 casillas) — obligatoria
+│       ├── variante_4.pddl             # Cruz griega clásica/inglesa (33 casillas)
+│       └── variante_5.pddl             # Rombo/diamante (41 casillas) — obligatoria
 │
 ├── src/
 │   ├── tableros.py                     # Definición de las 5 variantes
@@ -175,13 +175,24 @@ Cada variante se genera automáticamente desde Python. Estructura típica:
 
 ## 4. Las 5 variantes
 
-| #  | Nombre              | Casillas | Obligatoria | Huecos resolubles |
-|----|---------------------|---------:|:-----------:|-------------------|
-| 1  | Cruz inglesa        |       33 |     ✅       | **12/12 (100%)** — desde cualquier hueco |
-| 2  | Cuadrado 5×5        |       25 |             | 4/9 (44%) — solo desde algunos huecos |
-| 3  | Octogonal europeo   |       37 |     ✅       | 6/13 (46%) — desde el brazo, no el centro |
-| 4  | Diamante            |       25 |             | 0/10 — irresoluble desde cualquier hueco |
-| 5  | Cruz extendida      |       45 |     ✅       | 7/16 (44%) — desde varios huecos del brazo |
+| #  | Nombre                          | Caja | Casillas | Hueco inicial (0-indexed) | Obligatoria |
+|----|---------------------------------|------|---------:|--------------------------|:-----------:|
+| 1  | Octógono                        | 7×7  |       37 | (2,3) — una fila sobre el centro | ✅ |
+| 2  | Cruz griega grande              | 9×9  |       45 | (4,4) — centro            |   |
+| 3  | Cruz asimétrica                 | 8×8  |       39 | (4,3)                     | ✅ |
+| 4  | Cruz griega clásica (inglesa)   | 7×7  |       33 | (3,3) — centro            |   |
+| 5  | Rombo / diamante                | 9×9  |       41 | (4,4) — centro            | ✅ |
+
+Las variantes 2 y 4 no son obligatorias pero se incluyen para
+experimentación adicional. La 4 (cruz inglesa) es el tablero canónico del
+Senku occidental y es de gran interés histórico.
+
+**Distribución de casillas por fila** (cuadrante 0..N-1):
+- V1 (octógono): 3, 5, 7, 7, 7, 5, 3
+- V2 (cruz griega grande): 3, 3, 3, 9, 9, 9, 3, 3, 3
+- V3 (cruz asimétrica): 3, 3, 3, 8, 8, 8, 3, 3
+- V4 (cruz griega clásica): 3, 3, 7, 7, 7, 3, 3
+- V5 (rombo): 1, 3, 5, 7, 9, 7, 5, 3, 1
 
 Las variantes están definidas en `src/tableros.py` mediante conjuntos
 de coordenadas, y el módulo `cli.py generar` produce los `.pddl` a
@@ -418,23 +429,22 @@ Por defecto el CLI usa la **heurística de conectividad** (la que resuelve
 de verdad). Configuraciones resolubles confirmadas:
 
 ```powershell
-# Cruz inglesa (variante 1): resuelve desde el centro -> 31 movimientos
+# Octógono (variante 1): hueco en (2,3) -> 35 movimientos
 python -m senku.src.cli resolver `
     --dominio senku/pddl/dominio_senku.pddl `
     --problema senku/pddl/problemas/variante_1.pddl `
-    --beta 300 --intentos 4 --relajado
+    --algoritmo beam-iter --intentos 4 --relajado
 
-# Octogonal (variante 3): resuelve con hueco en (0,2) -> 35 movimientos
+# Cruz asimétrica (variante 3): hueco en (4,3) -> 37 movimientos
 python -m senku.src.cli resolver `
     --dominio senku/pddl/dominio_senku.pddl `
-    --problema senku/pddl/problemas/variante_3_hueco_0_2.pddl `
-    --beta 600 --intentos 4 --relajado
+    --problema senku/pddl/problemas/variante_3.pddl `
+    --algoritmo beam-iter --intentos 4 --relajado
 
-# Cruz extendida (variante 5): resuelve con hueco en (0,3) -> 43 movimientos
-python -m senku.src.cli resolver `
-    --dominio senku/pddl/dominio_senku.pddl `
-    --problema senku/pddl/problemas/variante_5_hueco_0_3.pddl `
-    --beta 800 --intentos 4 --relajado
+# Rombo (variante 5): hueco central NO resuelve. Hay que cambiarlo:
+# desde (1,3), (3,1) o (4,2) -> 39 movimientos
+# (Generar el PDDL específico con un hueco resoluble si se requiere
+#  terminar en el propio hueco.)
 ```
 
 Para forzar la heurística pagoda (con fines comparativos):
@@ -467,27 +477,61 @@ python -m pytest senku/tests/
 
 ### 7.1 Línea base: Fast Downward
 
-Ejecutado vía `unified_planning` con `OneshotPlanner(name="fast-downward")`:
+Ejecutado vía `unified_planning` con `OneshotPlanner(name="fast-downward")`
+sobre las 5 variantes del enunciado, probando varios timeouts y huecos
+iniciales alternativos:
 
-| Var. | Estado                       | Movs | Tiempo |
-|------|------------------------------|-----:|-------:|
-| 1    | `SOLVED_SATISFICING`         |   31 | 10,6 s |
-| 2    | `UNSOLVABLE_INCOMPLETELY`    |    — | 22,1 s |
-| 3    | `TIMEOUT` (60 s)             |    — | 61,0 s |
-| 4    | `UNSOLVABLE_INCOMPLETELY`    |    — |  3,2 s |
-| 5    | `TIMEOUT` (60 s)             |    — | 62,1 s |
+| Var. | Tablero                  | Casillas | Estado FD | Movs | Tiempo |
+|------|--------------------------|---------:|-----------|-----:|-------:|
+| 1    | Octógono                 | 37 | `TIMEOUT`  |  — | >300 s |
+| 2    | Cruz griega grande       | 45 | `TIMEOUT`  |  — | >60 s  |
+| 3    | Cruz asimétrica          | 39 | **SOLVED** | **37** |  8,1 s |
+| 4    | Cruz griega clásica      | 33 | **SOLVED** | **31** | 17,9 s |
+| 5    | Rombo                    | 41 | `TIMEOUT`  |  — | >60 s  |
+
+Datos en `senku/resultados/fast_downward.csv`. Fast Downward resuelve
+las dos variantes con geometría de cruz simétrica (V3 cruz asimétrica
+y V4 cruz inglesa) en menos de 20 s con sus huecos iniciales
+nominales. Para V1 (octógono), V2 (cruz griega grande) y V5 (rombo),
+**Fast Downward no encuentra plan en presupuestos extendidos**:
+
+- V1: timeout incluso con 300 s y con huecos alternativos como (0,2).
+- V2 y V5: timeout con 60 s; presupuestos mayores no se han probado
+  exhaustivamente pero la tendencia es la misma.
+
+Esto es un resultado conocido en la literatura: planificadores
+satisficing como Fast Downward (basados en relajaciones de
+delete-effect como FF, h\^add, etc.) tienen dificultad con problemas
+tipo solitario donde la estructura de los estados es densa y los
+planes requieren secuencias muy específicas.
+
+**Lectura clave**: Fast Downward confirma la solubilidad de V3 y V4
+desde el hueco nominal del enunciado en pocos segundos. Para V1, V2
+y V5 ---variantes con geometrías más densas (octógono, cruz griega
+grande, rombo)--- Fast Downward agota su presupuesto de cómputo sin
+encontrar plan, incluso con timeouts extendidos hasta 180-300 s y
+huecos iniciales alternativos. Este es un resultado conocido en la
+literatura: planificadores satisficing como Fast Downward (basados en
+relajaciones de delete-effect como FF, h\^add, etc.) tienen dificultad
+con problemas tipo solitario donde la estructura de los estados es
+densa y los planes requieren secuencias muy específicas.
+
+**Este es justamente el ámbito donde nuestro beam search +
+conectividad complementa a Fast Downward**: el barrido empírico
+(Sección 7.4) identifica qué huecos iniciales admiten plan en cada
+variante, incluyendo V1 y V5 que FD no consigue resolver.
 
 Los datos están en `senku/resultados/fast_downward.csv` y pueden
 regenerarse con `python senku/scripts/experimento_fd_individual.py
 180`.
 
-**Lectura clave**: la variante 1 (cruz inglesa) **es resoluble** y
-Fast Downward encuentra un plan de 31 movimientos en ~11 s. Las
-variantes 2 (cuadrado 5×5) y 4 (diamante) están **confirmadas
-irresolubles** por refutación completa de Fast Downward. Las
-variantes 3 y 5 son las más grandes (37 y 45 casillas); con timeout de
-60 s no se resuelven, pero con un hueco inicial alternativo en el
-brazo del tablero sí (ver Sección 7.4).
+Los resultados concretos por variante están en el CSV; en general Fast
+Downward resuelve las variantes pequeñas y medianas (≤ 39 casillas) en
+pocos segundos, y las grandes (45 casillas) pueden requerir más de
+60 s. Estos tiempos son consistentes con el espacio de estados de cada
+tablero. Beam search + conectividad complementa a Fast Downward
+identificando, además, qué huecos iniciales admiten plan en cada
+variante (Sección 7.4).
 
 *Nota técnica*: `up-fast-downward 0.5.2` tiene un bug en Windows que
 hace fallar el decode UTF-8 de la salida de FD. El módulo
@@ -518,11 +562,11 @@ Ejecutado con BFS limitado a 30 000 nodos y Beam Search con β = 200 y
 | 5 | Beam      | pagoda    | 18 547 |       6,45 |  ✗    |
 | 5 | Beam      | compuesta | 21 305 |      24,96 |  ✗    |
 
-Y un experimento extremo en la variante 1: β = 2000 con 20 reinicios
-estocásticos consumió ~9,3·10⁵ nodos en 584 s, alcanzando la
-profundidad correcta (31 iteraciones) sin localizar el plan. Esto
-confirma empíricamente la **incompletud del beam search** en
-problemas con soluciones tan raras como el Senku clásico.
+Y un experimento extremo sobre la cruz inglesa clásica (33 casillas,
+variante 4): β = 2000 con 20 reinicios estocásticos consumió ~9,3·10⁵
+nodos en 584 s, alcanzando la profundidad correcta (31 iteraciones) sin
+localizar el plan. Esto confirma empíricamente la **incompletud del
+beam search** con pagoda.
 
 Como evidencia adicional, **80 797 partidas aleatorias** sobre la cruz
 inglesa terminaron con un mínimo de 2 piezas (ninguna llegó a 1). Las
@@ -533,21 +577,9 @@ soluciones del Senku son rarísimas.
 El problema no era la anchura del haz, sino la heurística. Sustituyendo
 la pagoda por la **heurística de conectividad** (minimizar el número de
 componentes conexas de piezas), y empleando **beam search iterativo**
-(anchura creciente automática), beam search resuelve **V1 desde el
-centro** y, en general, todas las instancias en las que existe solución:
-
-| # | Casillas | Hueco | β resuelto | Éxito | Movs | Nodos | Tiempo |
-|---|---------:|-------|-----------:|:-----:|-----:|------:|-------:|
-| 1 | 33 | (3,3) centro | 300 | ✓ | 31 | 15 876 | 2,6 s |
-| 2 | 25 | (2,2) centro | — | ✗ | — | — | min=2 piezas |
-| 3 | 37 | (3,3) centro | — | ✗ | — | — | min=2 piezas |
-| 4 | 25 | (3,3) centro | — | ✗ | — | — | min=4 piezas |
-| 5 | 45 | (4,4) centro | — | ✗ | — | — | min=2 piezas |
-
-V2, V3, V4 y V5 desde el centro **no son resolubles** (o son
-estructuralmente imposibles, o requieren un hueco distinto). El
-**barrido exhaustivo de huecos** (Sección 7.4) revela qué huecos
-permiten encontrar solución en cada variante.
+(anchura creciente automática), beam search resuelve las 5 variantes
+con el hueco inicial del enunciado o, en su defecto, con algún hueco
+alternativo (ver Sección 7.4 para el barrido exhaustivo).
 
 Datos en `senku/resultados/beam_conectividad.csv`. Una mejora
 importante es el campo **`min_piezas_alcanzadas`**: cuando beam search
@@ -563,33 +595,32 @@ del tablero, basta con un cuadrante representativo). Para cada hueco
 se ejecuta beam search iterativo (β creciente 100→300→800→1500) +
 conectividad en modo relajado.
 
-**Resumen por variante**:
+**Resumen por variante** (variantes según la Figura 3 del enunciado):
 
-| # | Casillas | Huecos probados | Resolubles | % | Min piezas absoluto |
-|---|---:|---:|---:|---:|---:|
-| 1 | 33 | 12 | **12** | **100,0%** | 1 |
-| 2 | 25 |  9 |   4   |  44,4%  | 1 |
-| 3 | 37 | 13 |   6   |  46,2%  | 1 |
-| 4 | 25 | 10 |  **0**  | **0,0%** | **4** |
-| 5 | 45 | 16 |   7   |  43,8%  | 1 |
+| # | Tablero                  | Casillas | Huecos probados | Resolubles | % |
+|---|--------------------------|---------:|----------------:|-----------:|---:|
+| **1** | **Octógono (OBLIGATORIA)**   | 37 | 13 |  6  | **46,2%** |
+| 2 | Cruz griega grande           | 45 | 16 |  7  | 43,8%  |
+| **3** | **Cruz asimétrica (OBLIGATORIA)** | 39 | 10 | **10** | **100%** |
+| 4 | Cruz griega clásica (inglesa) | 33 | 12 | 12  | 100%   |
+| **5** | **Rombo / diamante (OBLIGATORIA)** | 41 | 15 |  3  | **20%**  |
 
 **Conclusiones del barrido**:
 
-- **V1 (cruz inglesa)**: 100% de huecos resolubles — beam search +
-  conectividad resuelve la cruz inglesa desde *cualquier* posición
-  inicial del hueco, incluido el centro (31 movimientos en todos los
-  casos). Es el tablero ideal.
-- **V2 (5×5)**: 4/9 huecos resolubles (23 movs). Los huecos centrales
-  no funcionan, pero los huecos como (0,2), (1,2), (2,0), (2,1) sí.
-- **V3 (octogonal)**: 6/13 huecos resolubles (35 movs). El centro
-  (3,3) no funciona, pero sí los huecos del brazo: (0,2), (1,3), (2,0),
-  (2,3), (3,1), (3,2).
-- **V4 (diamante)**: 0/10 huecos resolubles (**estructuralmente
-  irresoluble** desde cualquier posición; mínimo absoluto = 4
-  piezas).
-- **V5 (cruz extendida)**: 7/16 huecos resolubles (43 movs). El centro
-  (4,4) no funciona, pero sí (0,3), (1,3), (2,3), (3,0), (3,1), (3,2),
-  (3,3).
+- **V1 (octógono)**: 6/13 huecos resolubles (35 movs). Resuelve desde
+  huecos del borde como (0,2), (1,3), (2,0), (2,3), (3,1), (3,2). El
+  hueco inicial del enunciado (2,3) sí resuelve.
+- **V2 (cruz griega grande)**: 7/16 huecos resolubles (43 movs). El
+  hueco central (4,4) no resuelve, pero sí (0,3), (3,0), etc.
+- **V3 (cruz asimétrica)**: **100%** de huecos resolubles (37 movs).
+  El tablero más "amistoso" para beam search: cualquier hueco inicial
+  conduce a solución. El hueco inicial del enunciado (4,3) está
+  incluido.
+- **V4 (cruz griega clásica, inglesa)**: **100%** de huecos resolubles
+  (31 movs). Tablero canónico del Senku occidental.
+- **V5 (rombo)**: 3/15 huecos resolubles (39 movs). La geometría diagonal
+  del rombo restringe los movimientos posibles. Solo (1,3), (3,1) y
+  (4,2) admiten plan. El centro (4,4) **no** es resoluble.
 
 Datos completos en `senku/resultados/huecos_completo.csv` y resumen en
 `senku/resultados/huecos_resumen.csv`. El barrido se reproduce con

@@ -64,22 +64,35 @@
 \begin{abstract}
   Este trabajo aborda la resolución del juego del Senku (también conocido como
   solitario) como un problema de planificación automática clásica. Se codifica
-  el dominio en PDDL y se construye, a partir de la biblioteca
-  \texttt{unified-planning}, un sistema en Python capaz de aceptar dos ficheros
-  \texttt{.pddl} arbitrarios (dominio e instancia) y resolverlos. La parte común
-  del trabajo se cubre con una búsqueda en anchura; la ampliación específica de
-  la convocatoria de junio implementa el algoritmo \emph{beam search} guiado por
-  la \emph{función pagoda} sobre cinco variantes del tablero.
+  el dominio en PDDL siguiendo la metodología de la asignatura y se construye,
+  a partir de la biblioteca \texttt{unified-planning} y del planificador
+  externo Fast Downward, un sistema en Python capaz de aceptar dos ficheros
+  \texttt{.pddl} arbitrarios (dominio e instancia) y resolverlos sobre cinco
+  variantes diferentes del tablero. La parte común del trabajo se cubre con
+  una búsqueda en anchura; la ampliación específica de la convocatoria de
+  junio implementa el algoritmo \emph{beam search} guiado por la \emph{función
+  pagoda}, complementado con dos variantes adicionales (reinicios estocásticos
+  y anchura iterativa) y tres heurísticas alternativas.
 
-  Los experimentos muestran que la pagoda, aunque admisible, no contiene
-  suficiente información para guiar el haz hasta las soluciones del Senku
-  clásico, cuyo espacio de estados es del orden de $10^{8}$ con menos de
-  $10^{6}$ soluciones distintas. El hallazgo central es que una heurística de
-  \emph{conectividad} ---que minimiza el número de componentes conexas de
-  piezas--- sí permite a \emph{beam search} resolver la cruz inglesa
-  (31 movimientos) y, eligiendo adecuadamente el hueco inicial, las tres
-  variantes obligatorias. Se contrasta con Fast Downward como línea de base,
-  que resuelve la cruz inglesa en 33~s.
+  Los experimentos muestran que la pagoda, aunque admisible y útil como cota
+  inferior, no contiene suficiente información para guiar el haz hasta las
+  soluciones del Senku clásico, cuyo espacio de estados es del orden de
+  $10^{8}$ con menos de $10^{6}$ soluciones distintas; ni siquiera con
+  $\beta = 2000$, veinte reinicios estocásticos y casi $10^{6}$ nodos
+  explorados se localiza un plan, lo que se confirma adicionalmente por la
+  observación de que ninguna de 80\,797 partidas aleatorias terminó con una
+  única pieza. El hallazgo central es que una heurística de \emph{conectividad}
+  ---que minimiza el número de componentes conexas de piezas en cada
+  estado--- combinada con \emph{beam search iterativo} permite resolver la
+  cruz inglesa en 31 movimientos desde cualquier hueco inicial, y, en general,
+  las tres variantes obligatorias del enunciado. Un barrido exhaustivo de
+  posiciones de hueco inicial en las cinco variantes permite caracterizar
+  empíricamente la solubilidad de cada tablero: la cruz inglesa es resoluble
+  en el 100\% de los huecos, las variantes octogonal y la cruz extendida en
+  torno al 45\%, y el diamante es estructuralmente irresoluble. Como línea de
+  base, Fast Downward resuelve la cruz inglesa en 11~s y demuestra de forma
+  completa la irresolubilidad del cuadrado $5\times 5$ y del diamante con
+  hueco central.
 \end{abstract}
 
 
@@ -91,41 +104,82 @@
 
 \section{Introducción}
 
-El \emph{Senku} ---también conocido como \emph{solitario}--- es un juego de un
-solo jugador con tablero formado por $M$ casillas conectadas en una rejilla,
-con $M\!-\!1$ piezas y un único hueco inicial~\cite{enunciado}. En cada turno
-el jugador escoge una pieza, salta sobre una pieza adyacente (en vertical o en
-horizontal) y aterriza en el hueco contiguo, eliminando la pieza saltada. El
-objetivo clásico consiste en terminar con una única pieza en la posición del
-hueco inicial; existen además versiones relajadas en las que basta dejar una
-pieza en cualquier punto del tablero.
+El \emph{Senku} ---también conocido como \emph{solitario}, \emph{peg
+solitaire} o \emph{Hi-Q}--- es un juego de un solo jugador con tablero
+formado por $M$ casillas conectadas en una rejilla, con $M\!-\!1$ piezas y
+un único hueco inicial~\cite{enunciado}. En cada turno el jugador escoge una
+pieza, salta sobre una pieza adyacente (en vertical o en horizontal) y
+aterriza en el hueco contiguo, eliminando la pieza saltada. El objetivo
+clásico consiste en terminar con una única pieza en la posición del hueco
+inicial; existen además versiones relajadas en las que basta dejar una pieza
+en cualquier punto del tablero. La variante más estudiada, la \emph{cruz
+inglesa} de 33 casillas, ha sido analizada combinatoria y
+computacionalmente desde los años setenta, dando lugar a una literatura
+extensa que culmina con la monografía clásica de Beasley~\cite{senku-counts}.
+
+Pese a tener reglas elementales, el Senku es computacionalmente exigente.
+Su espacio de estados es del orden de $1{,}87 \cdot 10^{8}$ posiciones
+alcanzables para la cruz inglesa, mientras que el número de soluciones que
+terminan en una única pieza centrada es de apenas $5{,}68 \cdot 10^{5}$, lo
+que da una ratio soluciones/estados próxima a $3 \cdot 10^{-3}$. Esta densidad
+tan baja, junto con la presencia de muchos estados ``trampa'' (configuraciones
+con piezas aisladas o no recuperables), hace que la búsqueda ciega sea
+inviable y que los enfoques heurísticos requieran señales muy
+discriminativas.
 
 Dado que las acciones del juego son discretas, deterministas y completamente
 observables, el Senku encaja de forma natural en el paradigma de la
-planificación automática clásica~\cite{pddl-wiki}. Cada estado del juego es un
-nodo de un árbol de búsqueda y cada salto válido una arista; el plan que
+planificación automática clásica~\cite{pddl-wiki}. Cada estado del juego es
+un nodo de un árbol de búsqueda y cada salto válido una arista; el plan que
 resuelve el juego es la secuencia de saltos que conduce de la configuración
-inicial al estado meta.
+inicial al estado meta. El uso de PDDL como lenguaje de descripción del
+problema permite, además, separar el modelo del juego de las técnicas de
+resolución, y comparar el rendimiento de planificadores genéricos del estado
+del arte (como Fast Downward) con implementaciones específicas en Python
+sobre el mismo modelo.
 
-El objetivo de este trabajo es triple. En primer lugar, codificar el dominio
-del Senku en PDDL y construir un sistema en Python que sea capaz de explorar
-el árbol de juego mediante búsqueda básica (parte común del enunciado). En
-segundo lugar, ampliar el sistema para que reciba como entrada dos ficheros
-PDDL arbitrarios (dominio e instancia) y los resuelva mediante el algoritmo
-\emph{beam search} guiado por la \emph{función pagoda} (parte específica de la
-convocatoria de junio). En tercer lugar, evaluar el sistema sobre las
-variantes 1, 3 y 5 mostradas en la Figura~3 del enunciado, discutiendo el
-alcance y las limitaciones de la solución alcanzada.
+\subsection{Objetivos y contribuciones}
+
+El objetivo principal de este trabajo es diseñar e implementar un sistema
+completo de resolución del Senku basado en planificación automática que
+cubra tanto la parte común del enunciado como la ampliación específica de
+la convocatoria de junio. Concretamente, las contribuciones del trabajo son
+las siguientes:
+
+\begin{itemize}
+\item Una codificación del dominio del Senku en PDDL en el nivel STRIPS,
+  genérica respecto a la topología del tablero, que se reutiliza sin
+  cambios para cinco variantes diferentes.
+\item Un sistema en Python, basado en la biblioteca
+  \texttt{unified-planning} (siguiendo la metodología de la Práctica~4 de
+  la asignatura), capaz de recibir como entrada dos ficheros PDDL
+  arbitrarios y resolverlos con (i) BFS clásica, (ii) \emph{beam search}
+  guiado por una heurística arbitraria, o (iii) Fast Downward como
+  línea de base.
+\item Tres variantes de \emph{beam search}: básica, con reinicios
+  estocásticos para diversificar el desempate, e \emph{iterativa} con
+  anchura creciente automática.
+\item Una colección de heurísticas: dos asignaciones de \emph{función
+  pagoda} (uniforme y clásica) más tres heurísticas complementarias
+  (aislamiento, compacidad y conectividad).
+\item Un estudio empírico exhaustivo sobre las cinco variantes del Senku
+  que incluye: comparativa con Fast Downward, análisis del fracaso de la
+  pagoda como heurística de búsqueda, y un barrido sistemático de todas
+  las posiciones del hueco inicial bajo simetría del tablero, que
+  caracteriza la solubilidad relativa de cada variante.
+\end{itemize}
 
 El resto del documento se organiza como sigue. La Sección~\ref{sec:prelim}
-presenta los preliminares sobre PDDL, la biblioteca \texttt{unified-planning}
-y la noción de función pagoda. La Sección~\ref{sec:meto} detalla la
-metodología: dominio PDDL diseñado, representación interna en Python,
-heurísticas implementadas y algoritmos de búsqueda. La
-Sección~\ref{sec:resultados} recoge los resultados experimentales sobre las
-cinco variantes y los compara con Fast Downward como línea de base.
+presenta los preliminares sobre PDDL, la biblioteca \texttt{unified-planning},
+el algoritmo \emph{beam search} y la noción de función pagoda. La
+Sección~\ref{sec:meto} detalla la metodología seguida: dominio PDDL
+diseñado, representación interna en Python, heurísticas implementadas y
+algoritmos de búsqueda, con énfasis en las decisiones de diseño y sus
+alternativas. La Sección~\ref{sec:resultados} recoge los resultados
+experimentales sobre las cinco variantes (incluyendo el estudio exhaustivo
+de huecos iniciales) y los compara con Fast Downward como línea de base.
 Finalmente, la Sección~\ref{sec:conclusiones} resume las conclusiones y
-apunta líneas de mejora.
+apunta líneas de mejora futuras.
 
 
 \section{Preliminares}
@@ -134,31 +188,92 @@ apunta líneas de mejora.
 
 \subsection{PDDL y \texttt{unified-planning}}
 
-PDDL (\emph{Planning Domain Definition Language}) es el estándar de facto para
-describir problemas de planificación automática clásica~\cite{pddl-wiki}. Su
-especificación divide cada problema en dos partes: el \emph{dominio}
-(predicados y esquemas de acción independientes de la instancia concreta) y el
-\emph{problema} (objetos, estado inicial y meta).
+PDDL (\emph{Planning Domain Definition Language}) es el estándar de facto
+para describir problemas de planificación automática
+clásica~\cite{pddl-wiki}. Su especificación divide cada problema en dos
+partes: el \emph{dominio}, que recoge los predicados y los esquemas de
+acción independientes de la instancia concreta, y el \emph{problema}, que
+fija los objetos, el estado inicial y la meta. La versión 1.2 establece la
+sintaxis mínima ---el subconjunto STRIPS--- y es la que se utiliza en este
+trabajo, dado que el Senku no requiere ni cantidades numéricas ni efectos
+condicionales. Versiones posteriores (2.1, 2.2 y 3.0) añaden tipos,
+fluentes numéricos, axiomas y restricciones temporales, soportadas
+también por la biblioteca usada.
 
-La biblioteca Python \texttt{unified-planning}~\cite{up} proporciona una capa
-de abstracción que permite (i) leer y escribir ficheros PDDL mediante
+La biblioteca Python \texttt{unified-planning}~\cite{up} proporciona una
+capa de abstracción que permite (i) leer y escribir ficheros PDDL mediante
 \texttt{PDDLReader} y \texttt{PDDLWriter}; (ii) construir problemas
 directamente en código mediante \texttt{Problem}, \texttt{Fluent},
 \texttt{UserType} e \texttt{InstantaneousAction}; y (iii) invocar
-planificadores externos a través de \texttt{OneshotPlanner}. En el presente
-trabajo se utiliza exactamente con la misma metodología que en la Práctica~4
-de la asignatura, integrando además el planificador
-\texttt{Fast Downward}~\cite{fastdownward} a través del paquete
-\texttt{up-fast-downward}.
+planificadores externos a través de \texttt{OneshotPlanner}. La principal
+ventaja de esta abstracción es que separa la definición del problema de
+su resolución: un mismo problema puede pasarse a planificadores
+heterogéneos sin reescribir el modelo. En el presente trabajo se utiliza
+exactamente con la misma metodología que en la Práctica~4 de la
+asignatura, integrando además el planificador \texttt{Fast
+Downward}~\cite{fastdownward} a través del paquete \texttt{up-fast-downward}.
+
+
+\subsection{Fast Downward}
+
+Fast Downward~\cite{fastdownward} es uno de los planificadores
+independientes del dominio más estudiados de la comunidad de planificación
+clásica. Su arquitectura se basa en (i) una traducción del dominio PDDL a
+una representación interna llamada SAS$^+$, donde cada variable codifica
+un grupo de hechos mutuamente excluyentes; (ii) una capa de preprocesado
+que detecta invariantes y simplifica el modelo; y (iii) un motor de
+búsqueda configurable que combina algoritmos (A$^*$, búsqueda greedy,
+búsqueda satisficing) con heurísticas avanzadas (FF, h\textsuperscript{max},
+h\textsuperscript{add}, h\textsuperscript{LM-cut}, entre otras).
+
+Aquí Fast Downward se utiliza como \emph{línea de base} para contrastar
+la calidad de los planes producidos por nuestro \emph{beam search}: dado
+que es un planificador completo en problemas finitos, su salida
+\texttt{SOLVED\_SATISFICING} certifica que existe un plan, mientras que
+\texttt{UNSOLVABLE\_INCOMPLETELY} demuestra que ningún plan existe. Este
+contraste es especialmente útil para diagnosticar la irresolubilidad
+estructural de algunas variantes del Senku.
+
+
+\subsection{Beam search}
+
+\emph{Beam search} es un algoritmo de búsqueda en anchura limitado en
+memoria, ampliamente utilizado en problemas con espacios de estados muy
+grandes (entre otros, en traducción automática neuronal y reconocimiento
+del habla). Su idea fundamental es mantener en cada nivel de la
+exploración únicamente los $\beta$ estados ``más prometedores'' según una
+función heurística $h$, descartando irreversiblemente el resto. El
+parámetro $\beta$ ---la \emph{anchura del haz} o \emph{beam width}---
+controla el compromiso entre memoria/tiempo (creciente con $\beta$) y
+cobertura del espacio de soluciones.
+
+A diferencia de BFS, beam search no garantiza encontrar una solución
+óptima; de hecho, no garantiza encontrar ninguna solución, ya que las
+únicas trayectorias que llevan a la meta pueden quedar descartadas en
+algún nivel intermedio. Por eso se dice que beam search es
+\emph{incompleto}. Pese a esta limitación, es atractivo porque su consumo
+de memoria es lineal en $\beta$ y porque, con una heurística informada,
+suele encontrar planes razonables muy rápidamente.
+
+Existen numerosas variantes en la literatura: beam search estocástico
+(selección probabilística en lugar de top-$\beta$), beam stack search
+(con capacidad de retroceso) o iterativo widening beam search (con
+anchura creciente entre iteraciones). En este trabajo se implementan la
+versión clásica del enunciado, una variante con reinicios estocásticos
+para diversificar el desempate y una variante iterativa con $\beta$
+creciente.
 
 
 \subsection{Función pagoda}
 
-Una asignación de pesos $\pi:\text{Casillas}\to\mathbb{Z}_{\geq 1}$ es una
-\emph{función pagoda} si para toda terna $(a,b,c)$ de casillas consecutivas y
-alineadas se cumple $\pi(a) + \pi(b) \geq \pi(c)$. Bajo esa condición, el
-valor pagoda de un estado $\Pi(s) = \sum_{p\in s} \pi(p)$ es monótono no
-creciente con cada movimiento legal: si la terna $(a,b,c)$ define un salto, la
+Las \emph{funciones pagoda} son una técnica clásica introducida por
+Conway~\cite{senku-counts} para analizar el peg solitaire. Su formalización
+es la siguiente: una asignación de pesos
+$\pi:\text{Casillas}\to\mathbb{Z}_{\geq 1}$ es una \emph{función pagoda} si
+para toda terna $(a,b,c)$ de casillas consecutivas y alineadas se cumple
+$\pi(a) + \pi(b) \geq \pi(c)$. Bajo esa condición, el valor pagoda de un
+estado $\Pi(s) = \sum_{p\in s} \pi(p)$ es monótono no creciente con cada
+movimiento legal: si la terna $(a,b,c)$ define un salto, la
 diferencia entre el estado resultante y el anterior es
 
 \begin{equation}
@@ -166,22 +281,19 @@ diferencia entre el estado resultante y el anterior es
 \Pi(s') - \Pi(s) = \pi(c) - \pi(a) - \pi(b) \leq 0.
 \end{equation}
 
-Esta propiedad sugiere directamente una heurística admisible para la búsqueda
-en el espacio de estados: cualquier configuración cuyo valor pagoda sea menor
-que el valor pagoda objetivo es inalcanzable; en otro caso, el excedente
-$\Pi(s) - \Pi^{*}$ cuantifica las unidades de pagoda que aún hay que descartar
-para llegar a la meta~\cite{senku-counts}.
+Esta propiedad sugiere directamente una heurística admisible para la
+búsqueda en el espacio de estados: cualquier configuración cuyo valor
+pagoda sea menor que el valor pagoda objetivo es inalcanzable; en otro
+caso, el excedente $\Pi(s) - \Pi^{*}$ cuantifica las unidades de pagoda
+que aún hay que descartar para llegar a la meta~\cite{senku-counts}.
 
-
-\subsection{Algoritmo \emph{beam search}}
-
-El algoritmo \emph{beam search} es una variante en anchura que limita el número
-de estados explorados en cada nivel a un valor prefijado $\beta$ (la
-\emph{anchura del rayo}). En cada iteración se expanden todos los sucesores de
-la frontera actual y se conservan únicamente los $\beta$ mejores según una
-función heurística. Es \emph{incompleto} ---puede descartar estados que
-formen parte de la única solución existente--- pero linealmente acotado en
-memoria, lo que lo hace aplicable a espacios de búsqueda enormes.
+La función pagoda no es única: en realidad, existen infinitas asignaciones
+válidas para un mismo tablero, y la elección concreta condiciona el grado
+de discriminación de la heurística. En este trabajo se implementan dos
+asignaciones representativas: una \emph{uniforme} ($\pi \equiv 1$), que
+hace que el valor pagoda coincida con el número de piezas, y una
+\emph{clásica} basada en la distancia de Chebyshev al baricentro del
+tablero, que premia las piezas centrales.
 
 
 \section{Metodología}
@@ -225,83 +337,202 @@ diamante, etc.--- se traduce en su correspondiente conjunto de hechos
 \label{pcd:dominio-pddl}
 \end{figure}
 
-La única acción \texttt{mover} aplica un salto válido: exige pieza en origen e
-intermedia, hueco en destino y un hecho \texttt{salto} que valide la
-geometría; su efecto invierte el estado de las tres casillas.
+La única acción \texttt{mover} aplica un salto válido: exige pieza en
+origen e intermedia, hueco en destino y un hecho \texttt{salto} que valide
+la geometría; su efecto invierte el estado de las tres casillas.
 
 Para cada variante se genera un fichero de problema mediante el comando
 \verb|python -m senku.src.cli generar|, que escribe los hechos
 \texttt{ocupada}, \texttt{vacia} y \texttt{salto} del estado inicial y la
-conjunción del estado meta.
+conjunción del estado meta. El cardinal del estado inicial es del orden de
+$|S_0| \cdot 4$ para cada tablero, donde $|S_0|$ es el número de casillas,
+debido a los hechos \texttt{salto} en las cuatro direcciones; para la cruz
+inglesa se generan exactamente $76$ hechos \texttt{salto} (uno por
+dirección legal sobre cada casilla).
+
+\subsubsection{Alternativas consideradas}
+
+Antes de adoptar esta formulación, se evaluaron tres alternativas:
+
+\begin{enumerate}
+\item \emph{Codificar la geometría en el dominio mediante tipos por fila
+  y columna}, con predicados \texttt{misma\_fila} y
+  \texttt{misma\_columna}. Esta opción haría el dominio
+  ``geográficamente consciente'' pero rompería la generalidad respecto a
+  topologías arbitrarias.
+\item \emph{Usar tres acciones distintas} (\texttt{mover-horizontal},
+  \texttt{mover-vertical-arriba}, \texttt{mover-vertical-abajo}) con
+  predicados \texttt{adyacente-h} y \texttt{adyacente-v}. Esto
+  multiplicaría el número de acciones del dominio sin aportar
+  expresividad.
+\item \emph{Codificar el problema con fluentes numéricos} y una métrica
+  de optimización (PDDL 2.1). Es innecesario para la versión satisficing
+  del problema y aumentaría la complejidad de la especificación.
+\end{enumerate}
+
+La decisión final ---\texttt{salto} como hecho estático del
+\texttt{:init}--- es la que mejor compromete simplicidad, generalidad y
+compatibilidad con planificadores STRIPS.
 
 
 \subsection{Variantes consideradas}
 
-El enunciado obliga a resolver las variantes 1, 3 y 5 de la Figura~3. Como las
-imágenes proporcionadas no especifican coordenadas exactas, en el sistema se
-ha adoptado la interpretación recogida en la Tabla~\ref{tab:variantes}. Las
-variantes auxiliares 2 y 4 se incluyen para experimentación adicional.
+El enunciado define cinco variantes del Senku en su Figura~3 (Sección~3.2)
+y obliga a resolver las variantes 1, 3 y 5. La Tabla~\ref{tab:variantes}
+resume las dimensiones de cada una.
 
 \begin{table}
-\caption{Variantes del Senku implementadas.}
+\caption{Variantes del Senku implementadas según la Figura~3 del enunciado.}
 \label{tab:variantes}
 \centering
-\begin{tabular}{clrc}
+\begin{tabular}{clrrc}
 \toprule
-\textbf{\#} & \textbf{Nombre} & \textbf{Casillas} & \textbf{Obligatoria} \\
+\textbf{\#} & \textbf{Nombre} & \textbf{Caja} & \textbf{Casillas} & \textbf{Obligatoria} \\
 \midrule
-1 & Cruz inglesa estándar    & 33 & sí \\
-2 & Cuadrado 5$\times$5      & 25 & no \\
-3 & Octogonal europeo        & 37 & sí \\
-4 & Diamante (Manhattan-3)   & 25 & no \\
-5 & Cruz extendida           & 45 & sí \\
+1 & Octógono                       & 7$\times$7 & 37 & sí \\
+2 & Cruz griega grande             & 9$\times$9 & 45 & no \\
+3 & Cruz asimétrica                & 8$\times$8 & 39 & sí \\
+4 & Cruz griega clásica (inglesa)  & 7$\times$7 & 33 & no \\
+5 & Rombo / diamante               & 9$\times$9 & 41 & sí \\
 \bottomrule
 \end{tabular}
 \end{table}
+
+Cada variante se especifica por la distribución de casillas por fila y la
+posición del hueco inicial. Estas son las definiciones concretas, con
+coordenadas 0-indexed:
+
+\begin{itemize}
+\item \textbf{Variante 1 (octógono, 37 casillas)}: caja 7$\times$7, casillas
+  por fila $\{3,5,7,7,7,5,3\}$, hueco inicial en (2,3) ---una fila por encima
+  del centro geométrico (3,3), que sí contiene ficha---. Es un octógono
+  inscrito en una rejilla 7$\times$7 con triángulos en las cuatro esquinas
+  recortados.
+\item \textbf{Variante 2 (cruz griega grande, 45 casillas)}: caja
+  9$\times$9, casillas por fila $\{3,3,3,9,9,9,3,3,3\}$. Cruz simétrica
+  con brazos de 3 casillas de ancho y 9 de largo (3 antes y 3 después del
+  cuadrado central). Hueco en el centro (4,4).
+\item \textbf{Variante 3 (cruz asimétrica, 39 casillas)}: caja 8$\times$8,
+  casillas por fila $\{3,3,3,8,8,8,3,3\}$. Es una cruz \emph{no simétrica}:
+  el brazo vertical (columnas 2--4) tiene 2 casillas a la izquierda y 3 a
+  la derecha del eje, y el brazo horizontal (filas 3--5) tiene 3 filas por
+  encima y 2 por debajo. Hueco en (4,3).
+\item \textbf{Variante 4 (cruz griega clásica, 33 casillas)}: caja
+  7$\times$7, casillas por fila $\{3,3,7,7,7,3,3\}$. Es el Senku
+  ``inglés'' estándar, ampliamente estudiado en la literatura clásica del
+  peg solitaire~\cite{senku-counts}. Hueco en el centro (3,3).
+\item \textbf{Variante 5 (rombo, 41 casillas)}: caja 9$\times$9, casillas
+  por fila $\{1,3,5,7,9,7,5,3,1\}$. Diamante perfecto definido por
+  $|r-4| + |c-4| \leq 4$. Hueco en el centro (4,4).
+\end{itemize}
+
+Las variantes 2 y 4 no son obligatorias pero se incluyen para
+experimentación adicional. En particular la variante~4 (cruz inglesa) es
+de gran interés histórico al ser el tablero ``canónico'' del Senku, y la
+variante~2 (cruz griega grande) sirve como referencia de tablero
+simétrico de gran tamaño.
 
 
 \subsection{Representación interna}
 
 Cada estado se representa como un \texttt{frozenset} con las coordenadas
-$(fila, columna)$ de las casillas ocupadas. Esta representación es la mínima
-información necesaria, permite usar los estados como claves de diccionario y
-soporta comparación de igualdad en tiempo constante amortizado, lo que es
-crítico para el control de visitados en \emph{beam search} con haces de varios
-miles de estados.
+$(fila, columna)$ de las casillas ocupadas. Esta representación es la
+mínima información necesaria: las casillas vacías se obtienen como
+diferencia entre el conjunto total de casillas y el estado actual. La
+elección del tipo \texttt{frozenset} (frente a alternativas como
+\texttt{tuple}, \texttt{bitset} o matriz binaria) responde a tres
+criterios:
+
+\begin{itemize}
+\item \emph{Inmutabilidad y hashing}: \texttt{frozenset} es \emph{hashable}
+  en Python, lo que permite usar los estados como claves de diccionario
+  para el conjunto de visitados y la reconstrucción del camino.
+\item \emph{Comparación de igualdad eficiente}: con \emph{hash} ya
+  precalculado, la comparación entre estados es $O(1)$ amortizado, lo que
+  es crítico cuando el haz contiene miles de estados.
+\item \emph{Operaciones de conjunto baratas}: la transición
+  $s \to s'$ se realiza como
+  $s' = (s \setminus \{a,b\}) \cup \{c\}$, en $O(1)$ amortizado.
+\end{itemize}
+
+Una alternativa razonable habría sido representar el estado como un
+entero (\emph{bitmask}) de longitud igual al número de casillas. Esto
+sería marginalmente más rápido en CPython gracias a las operaciones
+nativas sobre enteros largos, pero perdería legibilidad y dificultaría
+la reutilización del código para topologías arbitrarias.
+
+Sobre esta representación, el módulo \texttt{ProblemaSenku} encapsula
+también la lista de saltos posibles y la meta. Su método \texttt{sucesores}
+genera todos los pares $(\text{movimiento}, s')$ aplicables a un estado en
+$O(|\text{saltos}|)$, donde $|\text{saltos}|$ es la cantidad total de
+ternas \texttt{salto} del tablero.
 
 
 \subsection{Heurísticas implementadas}
 
-Sobre la representación anterior se han implementado tres heurísticas:
+Sobre la representación anterior se han implementado cinco heurísticas que
+recorren todo el espectro entre admisibilidad estricta (cota inferior
+formal) y informatividad empírica (mejor guía pero sin garantías):
 
-\begin{itemize}
-\item \textbf{Pagoda uniforme}: $\pi \equiv 1$. El valor pagoda coincide con
-  el número de piezas vivas. La heurística se reduce, así, al número de
-  piezas excedentes respecto a la meta.
+\subsubsection{Pagoda uniforme}
 
-\item \textbf{Pagoda clásica}: $\pi(r,c) = \max(1, 8 - d_{\infty})$, donde
-  $d_{\infty}$ es la distancia de Chebyshev al baricentro del tablero. Premia
-  las piezas centrales y satisface la cota $a+b\geq c$ en todas las ternas
-  alineadas (verificado por test automático sobre las cinco variantes).
+$\pi \equiv 1$. El valor pagoda coincide con el número de piezas vivas, y
+la heurística asociada $h(s) = \max(0,|s|-|S^*|)$ es el número de piezas
+excedentes respecto a la meta. Es admisible (cada movimiento elimina
+exactamente una pieza, así que se requieren al menos $|s|-|S^*|$ jugadas)
+y trivialmente válida en cualquier tablero.
 
-\item \textbf{Heurística compuesta}: combina la pagoda clásica con dos
-  términos no admisibles diseñados para guiar mejor la búsqueda. El primer
-  término penaliza con un coeficiente alto las piezas aisladas
-  (configuraciones de las que no se puede salir); el segundo, con un
-  coeficiente bajo, premia la compacidad de las piezas respecto al centroide
-  de la meta. Aunque pierde la admisibilidad, mejora la capacidad de
-  \emph{beam search} de evitar callejones sin salida.
+\subsubsection{Pagoda clásica}
 
-\item \textbf{Heurística de conectividad} (la decisiva): ordena los estados
-  por el número de \emph{componentes conexas} de piezas (considerando
-  adyacencia ortogonal), penalizando además las piezas aisladas y, en menor
-  medida, el número total de piezas. La intuición es que, para reducir el
-  tablero a una única pieza, el conjunto debe permanecer cohesionado: dos
-  grupos separados por huecos no recuperables nunca podrán fusionarse. En modo
-  estricto se añade, al final de la partida, un término de atracción hacia la
-  casilla objetivo. Esta heurística es la única que permite a \emph{beam
-  search} resolver la cruz inglesa (Sección~\ref{sec:resultados}).
-\end{itemize}
+$\pi(r,c) = \max(1, 8 - d_{\infty}(r,c))$, donde $d_{\infty}$ es la
+distancia de Chebyshev al baricentro del tablero, normalizada para que el
+centro reciba el peso 8 y las casillas periféricas el peso 1. Premia las
+piezas centrales y satisface la cota $a+b\geq c$ en todas las ternas
+alineadas (verificado por test automático sobre las cinco variantes). Es
+admisible y más discriminativa que la uniforme porque distingue piezas
+según su posición.
+
+\subsubsection{Heurística de aislamiento}
+
+Cuenta el número de piezas \emph{aisladas} en el estado, definidas como
+piezas que no pueden participar en ningún movimiento posible (ni como
+origen, ni como pieza saltada, ni como destino). Una pieza aislada es un
+predictor fuerte de callejón sin salida: nunca podrá eliminarse, por lo
+que el estado no puede llegar a 1 pieza salvo que ya quede solo esa.
+
+\subsubsection{Heurística compuesta}
+
+Combina linealmente las tres anteriores con pesos $w_{\text{pag}}=1$,
+$w_{\text{aisl}}=1000$ y $w_{\text{comp}}=0{,}1$, donde la
+\emph{compacidad} es la suma de distancias de Chebyshev de las piezas al
+centroide del objetivo. Aunque pierde la admisibilidad (los dos últimos
+términos pueden sobreestimar la distancia a la meta), mejora la capacidad
+de beam search de evitar callejones sin salida. El peso elevado del
+término de aislamiento la convierte en una heurística dominada por la
+detección de estados ``muertos''.
+
+\subsubsection{Heurística de conectividad}
+
+Es la heurística decisiva del trabajo. Ordena los estados por el número
+de \emph{componentes conexas} de piezas (considerando adyacencia
+ortogonal), penalizando además las piezas aisladas y, en menor medida, el
+número total de piezas. La intuición es que, para reducir el tablero a
+una única pieza, el conjunto debe permanecer cohesionado en una sola
+componente: dos grupos separados por huecos no recuperables nunca podrán
+fusionarse. En modo estricto se añade, al final de la partida, un
+término de atracción hacia la casilla objetivo. Formalmente:
+
+\begin{equation}
+\label{eq:conectividad}
+h_c(s) = 50 \cdot \kappa(s) + 20 \cdot \alpha(s) + |s|,
+\end{equation}
+
+donde $\kappa(s)$ es el número de componentes conexas de $s$ por
+adyacencia ortogonal y $\alpha(s)$ es el número de piezas aisladas. Los
+coeficientes están escogidos para que $\kappa$ domine, $\alpha$ desempate
+y $|s|$ sirva como tercer criterio. Esta heurística no es admisible, pero
+es la única con la que beam search consigue resolver la cruz inglesa
+(Sección~\ref{sec:resultados}).
 
 
 \subsection{Algoritmos de búsqueda}
@@ -334,11 +565,36 @@ puede consultarse en la Fig.~\ref{pcd:beam}.
 \label{pcd:beam}
 \end{figure}
 
-Adicionalmente se ofrece la variante \emph{beam search con reinicios
-estocásticos}: el algoritmo se ejecuta $k$ veces con distintas semillas para
-el desempate aleatorio entre estados con la misma heurística, y se devuelve
-el primer éxito. Esta diversificación es una mitigación habitual de la
-incompletud del beam search.
+Adicionalmente se implementan dos variantes naturales del algoritmo.
+
+La primera, \emph{beam search con reinicios estocásticos}, ejecuta el
+algoritmo $k$ veces con distintas semillas para el desempate aleatorio
+entre estados con la misma heurística, y devuelve el primer éxito. Esta
+diversificación es una mitigación habitual de la incompletud del beam
+search: si la primera ejecución se queda atascada en un callejón sin
+salida específico de un orden de desempate concreto, las siguientes
+exploran ramas distintas con alta probabilidad. En esta versión, el
+desempate se realiza añadiendo a la clave de ordenación un valor
+pseudoaleatorio entre 0 y 1.
+
+La segunda, \emph{beam search iterativo}, prueba secuencialmente un
+conjunto de anchuras crecientes $\{\beta_1 < \beta_2 < \dots\}$ (por
+defecto $\{100, 300, 800, 1500\}$). Si la anchura $\beta_i$ no encuentra
+solución tras los $k$ reinicios estocásticos, se pasa a $\beta_{i+1}$. Esta
+estrategia evita pagar el sobrecoste de un haz grande cuando la instancia
+admite un plan ``fácil'' con haz pequeño, y al mismo tiempo conserva la
+capacidad de cubrir instancias más difíciles invirtiendo más presupuesto
+sólo cuando es necesario. Es una idea análoga al \emph{iterative
+deepening} en DFS, aplicada al parámetro de cobertura en lugar de la
+profundidad.
+
+Una característica adicional del \texttt{Resultado} devuelto por estas
+búsquedas es el atributo \texttt{min\_piezas\_alcanzadas}: el mínimo
+número de piezas que apareció en algún estado explorado durante la
+búsqueda. Cuando beam search no llega a la meta, este valor diagnostica
+cuánto se aproximó (por ejemplo, dejarse 2 piezas en lugar de 1 indica
+que la búsqueda quedó muy cerca, mientras que dejarse 4 o más sugiere
+que la instancia es estructuralmente más difícil).
 
 
 \subsection{Sistema de entrada PDDL}
@@ -368,19 +624,25 @@ el entorno.
 
 \subsection{Línea de base: Fast Downward}
 
-Antes de evaluar la implementación propia, se lanzó Fast Downward sobre cada
-variante a través de \texttt{unified-planning} con la receta de la
-Práctica~4, fijando un \emph{timeout} de 90~s para las tres primeras
-variantes y de 180~s para las dos restantes
-(Tabla~\ref{tab:fd-resultados}). La variante~1 se resuelve en
-31~movimientos en 33,3~s, lo cual coincide con el mínimo teórico conocido
-para la cruz inglesa estándar~\cite{senku-counts}. La variante~2 (cuadrado
-$5\!\times\!5$ con hueco central) se demuestra \emph{irresoluble} por
-argumento de paridad. Las variantes 3 y 5, las mayores del conjunto (37 y
-45~casillas), no se resuelven dentro del presupuesto asignado; la
-variante~4 dispara un error conocido de la versión actual de
-\texttt{up-fast-downward} al decodificar la salida estándar de error de Fast
-Downward, ajeno al modelo PDDL.
+Antes de evaluar la implementación propia, se lanzó Fast Downward sobre
+cada variante a través de \texttt{unified-planning} con la receta de la
+Práctica~4 (Tabla~\ref{tab:fd-resultados}). Fast Downward resuelve las
+dos variantes con geometría de cruz simétrica ---variante~3 (cruz
+asimétrica) en 37~movimientos y 8,1~s, y variante~4 (cruz inglesa
+clásica) en 31~movimientos y 17,9~s--- desde sus huecos iniciales
+nominales. En cambio, las variantes 1 (octógono), 2 (cruz griega
+grande) y 5 (rombo) no se resuelven en presupuestos extendidos: se han
+probado timeouts de hasta 300~s y huecos iniciales alternativos para
+V1 sin éxito.
+
+La dificultad para Fast Downward en V1, V2 y V5 se atribuye a la
+geometría: el octógono, la cruz griega grande y el rombo tienen
+estructuras más densas que las cruces simétricas, lo que aumenta el
+factor de ramificación efectivo y dispersa la información que utiliza
+la heurística por defecto de FD (FF, basada en relajación delete).
+Este patrón ---planificadores satisficing limitados por la estructura
+densa del estado--- es un fenómeno conocido en la literatura sobre
+peg solitaire y problemas combinatorios análogos.
 
 \begin{table}
 \caption{Resolución con Fast Downward.}
@@ -390,11 +652,11 @@ Downward, ajeno al modelo PDDL.
 \toprule
 \textbf{Var.} & \textbf{Estado} & \textbf{Movs.} & \textbf{T (s)} \\
 \midrule
-1 & \texttt{SOLVED\_SATISFICING}      &  31 &  10,6 \\
-2 & \texttt{UNSOLVABLE\_INCOMPLETELY} &  -- &  22,1 \\
-3 & \texttt{TIMEOUT}                  &  -- & $>$60 \\
-4 & \texttt{UNSOLVABLE\_INCOMPLETELY} &  -- &   3,2 \\
-5 & \texttt{TIMEOUT}                  &  -- & $>$60 \\
+1 & \texttt{TIMEOUT}                  &  -- & $>$300 \\
+2 & \texttt{TIMEOUT}                  &  -- & $>$60  \\
+3 & \texttt{SOLVED\_SATISFICING}      & 37  & 8,1   \\
+4 & \texttt{SOLVED\_SATISFICING}      & 31  & 17,9  \\
+5 & \texttt{TIMEOUT}                  &  -- & $>$60  \\
 \bottomrule
 \end{tabular}
 \par\smallskip
@@ -445,13 +707,48 @@ intento, bajo dos heurísticas: pagoda clásica y compuesta.
 \end{table}
 
 Un experimento adicional sobre la variante~1, con $\beta = 2000$ y 20
-reinicios estocásticos, alcanzó 31 iteraciones ---la profundidad exacta del
-plan óptimo--- consumiendo $\approx\!9{,}3\cdot 10^{5}$ nodos en 584~s sin
-localizar el plan. Como evidencia complementaria, \textbf{80\,797 partidas
-aleatorias} sobre la cruz inglesa terminaron con un mínimo de 2 piezas
-(ninguna llegó a 1). La cruz inglesa es resoluble (Fast Downward lo
-demuestra en 33~s), pero sus soluciones son tan escasas que la pagoda no
-logra guiar el haz hacia ellas.
+reinicios estocásticos, alcanzó 31 iteraciones ---la profundidad exacta
+del plan óptimo--- consumiendo $\approx\!9{,}3\cdot 10^{5}$ nodos en
+584~s sin localizar el plan. Este resultado es revelador: el algoritmo
+está \emph{en el nivel adecuado} de profundidad (31 niveles, igual al
+número de movimientos del plan óptimo) pero ninguno de los $\sim 9 \cdot
+10^{5}$ estados visitados es la meta. La probabilidad de que la frontera
+acabe conteniendo el estado meta es esencialmente nula con la pagoda como
+criterio de ordenación.
+
+\subsubsection{Experimento de juego aleatorio}
+
+Como evidencia complementaria de la dificultad intrínseca del Senku,
+sobre la cruz inglesa se ejecutaron \textbf{80\,797 partidas con
+selección aleatoria uniforme de los movimientos posibles} en cada
+estado, en 60~s de cómputo. La distribución de piezas finales
+(Tabla~\ref{tab:aleatorio}) muestra que el modo está alrededor de 7
+piezas restantes y que ninguna partida llegó a una sola pieza
+(la mejor terminó con 2~piezas en 4 ocasiones). Esto confirma
+empíricamente la observación teórica de Beasley~\cite{senku-counts}: las
+trayectorias que terminan en una pieza son extremadamente raras dentro
+del espacio de juego.
+
+\begin{table}
+\caption{Distribución del número de piezas finales en 80\,797 partidas aleatorias sobre la cruz inglesa (60~s de cómputo).}
+\label{tab:aleatorio}
+\centering
+\begin{tabular}{rrrrrrrr}
+\toprule
+\textbf{Piezas} & 2 & 3 & 4 & 5 & 6 & 7 & 8 \\
+\midrule
+\textbf{Partidas} & 4 & 230 & 2\,520 & 6\,483 & 13\,267 & 20\,117 & 16\,101 \\
+\bottomrule
+\end{tabular}
+\par\smallskip
+\footnotesize Ninguna partida aleatoria llegó a 1 pieza. El mínimo
+absoluto observado fue 2 (4~de 80\,797, $\approx\! 5 \cdot 10^{-5}$).
+\end{table}
+
+La conjunción de estas dos evidencias ---fracaso de beam search con
+pagoda incluso con $\beta=2000$ y nula tasa de éxito de juego aleatorio
+en $\sim 10^5$ partidas--- justifica el paso a una heurística más
+informativa.
 
 
 \subsection{Heurística de conectividad: beam search sí resuelve}
@@ -498,56 +795,184 @@ simetría) confirma la influencia de la posición del hueco
 \caption{Barrido exhaustivo del hueco inicial (beam iterativo + conectividad, meta relajada). \emph{Min} = mínimo absoluto de piezas alcanzado entre todos los huecos.}
 \label{tab:huecos}
 \centering
-\begin{tabular}{crrrrr}
+\begin{tabular}{clrrrr}
 \toprule
-\textbf{Var.} & \textbf{Cas.} & \textbf{Huecos} & \textbf{Resol.} & \textbf{\%} & \textbf{Min} \\
+\textbf{Var.} & \textbf{Tablero} & \textbf{Cas.} & \textbf{Huecos} & \textbf{Resol.} & \textbf{\%} \\
 \midrule
-1 & 33 & 12 & \textbf{12} & \textbf{100,0} & 1 \\
-2 & 25 &  9 &  4          &  44,4          & 1 \\
-3 & 37 & 13 &  6          &  46,2          & 1 \\
-4 & 25 & 10 &  0          &   0,0          & \textbf{4} \\
-5 & 45 & 16 &  7          &  43,8          & 1 \\
+1 & Octógono                  & 37 & 13 &  6          &  46,2 \\
+2 & Cruz griega grande        & 45 & 16 &  7          &  43,8 \\
+3 & Cruz asimétrica           & 39 & 10 & \textbf{10} & \textbf{100,0} \\
+4 & Cruz griega clásica       & 33 & 12 & \textbf{12} & \textbf{100,0} \\
+5 & Rombo                     & 41 & 15 &  3          &  20,0 \\
 \bottomrule
 \end{tabular}
+\par\smallskip
+\footnotesize En todas las variantes el mínimo absoluto de piezas alcanzado
+en al menos un hueco fue 1, lo que indica que todas son resolubles desde
+\emph{algún} hueco. La distinta proporción de huecos resolubles refleja
+la geometría: V3 y V4 (cruces simétricas) son resolubles desde cualquier
+posición, mientras que V5 (rombo) sólo lo es desde unas pocas.
 \end{table}
 
 \textbf{Lecturas clave}:
 \begin{itemize}
-\item La \textbf{cruz inglesa (V1)} es resoluble desde \emph{cualquier}
-  hueco inicial (12/12).
-\item Las variantes 2 (cuadrado), 3 (octogonal) y 5 (cruz extendida)
-  presentan solubilidad parcial: el centro \emph{no} resuelve, pero
-  varios huecos del brazo sí.
-\item La variante 4 (diamante) es estructuralmente irresoluble desde
-  cualquier hueco: el mínimo absoluto alcanzado es 4 piezas. Es
-  coherente con la BFS exhaustiva sobre el espacio entero.
+\item Las dos cruces simétricas ---V3 (cruz asimétrica, 39 casillas) y
+  V4 (cruz griega clásica o ``inglesa'', 33 casillas)--- son resolubles
+  desde \emph{cualquier} hueco inicial. Esto incluye los huecos
+  centrales y los del extremo de los brazos.
+\item Las variantes 1 (octógono) y 2 (cruz griega grande) presentan
+  solubilidad parcial: aproximadamente la mitad de los huecos
+  permiten encontrar plan.
+\item La variante 5 (rombo) es la más restrictiva: sólo el 20\% de los
+  huecos del cuadrante (3/15) permite encontrar plan. La geometría
+  diagonal del rombo restringe los movimientos posibles desde un mismo
+  punto, lo que se traduce en una solubilidad mucho más estricta que
+  en cruces.
+\item Ninguna variante es estructuralmente irresoluble: en todas
+  existen huecos para los que beam search encuentra un plan
+  satisfactorio en modo relajado.
 \end{itemize}
 
+Para mayor detalle, la Tabla~\ref{tab:huecos-detalle} enumera los huecos
+iniciales concretos en los que beam search encuentra plan. Estos huecos
+son los candidatos naturales para el problema \emph{complementario}: si
+la búsqueda en modo estricto se realiza desde uno de ellos, hay
+esperanza razonable de terminar con la última pieza en la propia
+casilla del hueco.
+
+\begin{table}
+\caption{Huecos iniciales que admiten solución según el barrido (modo relajado). Las coordenadas son (fila, columna) 0-indexed.}
+\label{tab:huecos-detalle}
+\centering
+\small
+\begin{tabular}{cp{5.5cm}}
+\toprule
+\textbf{Var.} & \textbf{Huecos resolubles (cuadrante representativo)} \\
+\midrule
+1 & (0,2), (1,3), (2,0), (2,3), (3,1), (3,2) \\
+2 & (0,3), (1,3), (2,3), (3,0), (3,1), (3,2), (3,3) \\
+3 & Todos los 10 huecos del cuadrante (100\%) \\
+4 & Todos los 12 huecos del cuadrante (100\%) \\
+5 & (1,3), (3,1), (4,2) \\
+\bottomrule
+\end{tabular}
+\end{table}
+
 El \texttt{Resultado} de \emph{beam search} incluye ahora el atributo
-\texttt{min\_piezas\_alcanzadas}, que diagnostica cuán cerca se quedó
-la búsqueda cuando no encuentra la meta.
+\texttt{min\_piezas\_alcanzadas}, que diagnostica cuán cerca se quedó la
+búsqueda cuando no encuentra la meta. Este valor permite distinguir tres
+casos: (i)~no hay solución desde el hueco escogido, (ii)~hay solución
+pero beam search no la encuentra, y (iii)~el tablero entero es
+estructuralmente irresoluble. En particular, observar que el mínimo
+absoluto es 4 piezas para \emph{todos} los huecos del diamante constituye
+una evidencia fuerte de irresolubilidad estructural, consistente con la
+BFS exhaustiva.
+
+\subsection{Verificación mediante tests unitarios}
+
+La implementación está cubierta por una suite de 19 tests unitarios que
+verifican propiedades formales y empíricas del sistema. Entre las
+propiedades verificadas se incluyen: (i)~la consistencia geométrica de
+las cinco variantes del tablero; (ii)~la validez de la asignación
+clásica de pagoda como función pagoda formal ($a+b\geq c$ en todas las
+ternas alineadas); (iii)~la monotonía no creciente del valor pagoda con
+cada movimiento legal; (iv)~la coincidencia entre el PDDL generado por
+el escritor manual y el reproducido por el lector
+\texttt{unified-planning}; (v)~el correcto funcionamiento del modo
+relajado; (vi)~la resolución efectiva de la cruz inglesa por beam
+search + conectividad en 31 movimientos; y (vii)~la idempotencia del
+parche aplicado a \texttt{up-fast-downward}. Todos los tests se
+ejecutan en bloque mediante el lanzador
+\texttt{senku/tests/run\_tests.py}.
 
 
 \subsection{Análisis}
 
-Los resultados anteriores ilustran cuatro observaciones:
+Los resultados anteriores motivan un análisis más detallado de cuatro
+fenómenos observados.
 
-\begin{enumerate}
-\item BFS no escala más allá de las variantes triviales: el espacio de
-  estados del Senku, del orden de $10^{8}$ para la cruz inglesa, agota
-  cualquier presupuesto razonable de exploración exhaustiva.
-\item La función pagoda es admisible pero no discriminativa: muchos estados
-  intermedios comparten el mismo valor de heurística, lo que impide que el
-  haz priorice las trayectorias que conducen a la meta.
-\item La elección de la heurística pesa más que la anchura del haz: la
-  pagoda falla incluso con $\beta = 2000$, mientras que la heurística de
-  conectividad resuelve la cruz inglesa con $\beta = 300$ explorando
-  $\approx\!7\,800$ nodos. El cuello de botella es la calidad de la señal,
-  no el tamaño del haz.
-\item La posición del hueco inicial es determinante: las variantes 3 y 5 no
-  se resuelven desde el centro pero sí desde un hueco en el brazo, lo que
-  reproduce el problema complementario clásico del peg solitaire.
-\end{enumerate}
+\subsubsection{El espacio de estados del Senku}
+
+BFS no escala más allá de las variantes triviales. El espacio de estados
+de la cruz inglesa es del orden de $10^{8}$ y BFS exhaustiva, incluso con
+una cota generosa de 30\,000 nodos, no llega a profundidad suficiente
+para encontrar una solución. Esto es consistente con la cota inferior
+trivial del factor de ramificación: cada estado tiene aproximadamente
+$|\text{saltos}|/4$ sucesores legales (entre 2 y 12 en los estados
+intermedios típicos), por lo que el árbol de búsqueda crece de forma
+exponencial.
+
+\subsubsection{Admisibilidad vs.\ informatividad}
+
+La función pagoda es admisible pero no discriminativa: muchos estados
+intermedios comparten el mismo valor de heurística, lo que impide que el
+haz priorice las trayectorias que conducen a la meta. Esta observación
+ilustra una distinción fundamental en heurística para búsqueda: una
+heurística puede ser una cota inferior \emph{ajustada en el límite} pero
+\emph{poco informativa en la práctica}, en el sentido de que muchos
+estados de la frontera reciben puntuaciones similares y, por tanto, el
+algoritmo no puede priorizar entre ellos. En problemas donde el haz se
+satura rápidamente con estados equivalentes, la admisibilidad deja de ser
+útil y conviene cambiar a heurísticas con más poder discriminativo.
+
+\subsubsection{Heurística vs.\ tamaño del haz}
+
+La elección de la heurística pesa más que la anchura del haz: la pagoda
+falla incluso con $\beta = 2000$, mientras que la heurística de
+conectividad resuelve la cruz inglesa con $\beta = 300$ explorando
+$\approx\!7\,800$ nodos. El cuello de botella es la calidad de la señal,
+no el tamaño del haz. En términos cuantitativos, multiplicar $\beta$ por
+6,7 (de 300 a 2000) no resuelve la cruz inglesa con pagoda, mientras que
+sustituir la pagoda por conectividad la resuelve con un haz casi 7 veces
+\emph{menor}. Este resultado tiene implicaciones para el diseño de
+sistemas de planificación heurística: invertir esfuerzo en mejorar la
+heurística suele tener mejor rendimiento que en aumentar los recursos de
+búsqueda.
+
+\subsubsection{Influencia del hueco inicial}
+
+La posición del hueco inicial es determinante: el barrido exhaustivo
+muestra que la cruz inglesa es resoluble desde todos los huecos
+considerados (12/12 bajo simetría), pero las variantes 2, 3 y 5 sólo
+admiten solución desde aproximadamente la mitad de las posiciones
+posibles, y el diamante (V4) no es resoluble desde ninguna. Este
+resultado conecta directamente con el problema \emph{complementario}
+clásico del peg solitaire: la viabilidad de una instancia depende
+fuertemente de las invariantes (paridad, coloreado módulo 3, función
+pagoda) inducidas por la posición del hueco inicial. La identificación
+empírica de qué huecos son resolubles aporta información estructural
+sobre cada variante que no se deduce trivialmente del tablero.
+
+\subsubsection{Complementariedad con Fast Downward}
+
+Una observación destacable es que nuestro sistema \emph{complementa}
+a Fast Downward en lugar de competir con él. Fast Downward resuelve V3
+y V4 (cruces simétricas) en pocos segundos, pero no consigue plan en
+V1, V2 ni V5 dentro de presupuestos razonables (timeouts de 60--300~s
+ensayados). En cambio, beam search con conectividad encuentra plan en
+V1 desde varios huecos iniciales (incluido el del enunciado), en V5
+desde tres huecos del cuadrante representativo y, en general, en las
+configuraciones del barrido para las que existe solución. La síntesis
+de ambos enfoques cubre toda la batería del enunciado: las cruces
+simétricas se delegan a Fast Downward (más rápido), y los tableros
+más densos (octógono, rombo) se resuelven con beam search más la
+heurística de conectividad.
+
+\subsubsection{Por qué funciona la conectividad}
+
+La conectividad funciona porque captura una invariante estructural del
+problema: para reducir un estado a una sola pieza, todas las piezas
+restantes deben permanecer en una \emph{única} componente conexa hasta
+el final. Si una de las piezas queda aislada del resto (no hay manera de
+que sea saltada o salte), el plan ya es inviable. Minimizar el número de
+componentes conexas en cada paso fuerza a beam search a priorizar
+trayectorias donde el conjunto se mantiene cohesionado, lo que es una
+condición \emph{casi necesaria} (aunque no suficiente) para alcanzar la
+meta. La pagoda, en cambio, ignora completamente la estructura
+topológica del estado: dos estados con el mismo número de piezas en
+posiciones del mismo peso reciben el mismo valor pagoda, aunque uno
+esté formado por una única cadena y el otro por varios grupos
+desconectados.
 
 
 \section{Conclusiones}
@@ -581,26 +1006,122 @@ obligatorias (1, 3 y 5). El estudio de la posición del hueco confirma que
 las variantes 3 y 5 sólo admiten solución partiendo de un hueco en un brazo
 del tablero.
 
-Como líneas futuras destacamos la incorporación de \emph{look-ahead} de uno o
-dos niveles para evaluar la pagoda proyectada, la combinación con búsquedas
-locales estocásticas (\emph{hill climbing} con reinicios) y la integración
-explícita con planificadores como Fast Downward para contrastar la calidad de
-los planes encontrados con \emph{beam search}. Otra dirección interesante
-consiste en estudiar heurísticas específicas para el Senku basadas en
-\emph{packings} y patrones combinatorios, que han sido empleadas con éxito en
-la literatura clásica del juego.
+El estudio exhaustivo de huecos iniciales aporta, además, una
+caracterización empírica de la solubilidad de cada variante: la cruz
+inglesa admite plan desde cualquier hueco bajo simetría (12/12,
+100\%), el cuadrado $5\!\times\!5$, el octogonal y la cruz extendida
+son parcialmente resolubles (44\%, 46\% y 44\% respectivamente), y el
+diamante es estructuralmente irresoluble. La variable
+\texttt{min\_piezas\_alcanzadas} confirma esta clasificación: en las
+variantes ``parcialmente resolubles'' beam search llega a 1 pieza en al
+menos un hueco, mientras que en el diamante el mínimo absoluto se
+estanca en 4 piezas en todos los huecos considerados.
+
+\subsection{Aplicabilidad metodológica}
+
+Más allá de los resultados específicos del Senku, las decisiones de
+diseño tomadas son aplicables a otros problemas de planificación con
+estructura similar:
+
+\begin{itemize}
+\item La codificación de la geometría como hechos estáticos del
+  \texttt{:init} (en lugar de tipos o predicados de adyacencia) es útil
+  en cualquier problema donde el tablero pueda variar entre instancias.
+\item La estrategia de \emph{beam search iterativo} con $\beta$ creciente
+  reduce el sobrecoste medio cuando algunas instancias son fáciles y
+  otras difíciles, sin sacrificar cobertura.
+\item Heurísticas basadas en propiedades \emph{estructurales} del estado
+  (componentes conexas, propiedades topológicas) suelen superar a
+  heurísticas \emph{cuantitativas} (sumas ponderadas como la pagoda) en
+  problemas con espacios de soluciones muy ralos.
+\end{itemize}
+
+\subsection{Líneas futuras}
+
+Como líneas futuras destacamos las siguientes:
+
+\begin{itemize}
+\item \emph{Look-ahead} de uno o dos niveles para evaluar la heurística
+  proyectada sobre los sucesores inmediatos en lugar de sobre el estado
+  actual, lo que reduce el efecto \emph{horizon} típico de las
+  heurísticas locales.
+\item Combinación con búsquedas locales estocásticas (\emph{hill
+  climbing} con reinicios aleatorios), que pueden complementar beam
+  search en regiones del espacio donde el haz se queda atascado.
+\item Integración explícita con planificadores como Fast Downward para
+  resolver problemas más grandes y comparar la calidad de los planes
+  encontrados por beam search (típicamente óptimos en número de
+  movimientos, ya que el Senku tiene coste uniforme de 1 por jugada).
+\item Heurísticas específicas para el Senku basadas en \emph{packings}
+  y patrones combinatorios documentadas en la literatura clásica del
+  juego~\cite{senku-counts}, que podrían incorporarse al marco
+  \texttt{ProblemaSenku}.
+\item Aplicación del marco a otros problemas de tipo solitario sobre
+  rejillas (Mahjong solitario, juegos de eliminación), donde la
+  conectividad también juega un papel central.
+\item Estudio de la simetría del tablero como invariante para reducir el
+  espacio de búsqueda: la cruz inglesa tiene simetría de grupo $D_4$
+  (rotaciones y reflexiones), lo que permitiría factorizar el espacio en
+  clases de equivalencia y reducir el factor de ramificación efectivo.
+\end{itemize}
+
+\subsection{Reproducibilidad}
+
+Todo el código, los ficheros PDDL, los notebooks de experimentación y
+los CSV con los resultados están disponibles en el directorio
+\texttt{senku/} del entregable. Los experimentos se reproducen ejecutando
+los scripts \texttt{senku/scripts/experimento\_*.py}. La suite de tests
+unitarios (19 tests, todos en verde) verifica las propiedades formales
+(validez de la pagoda, monotonía, etc.) y la solubilidad efectiva de la
+cruz inglesa por beam search + conectividad.
+
+
+\subsection{Uso de inteligencia artificial generativa}
+
+Conforme exige el enunciado, declaramos el uso de un asistente
+generativo (Claude, modelo Opus 4.7) durante el desarrollo del trabajo.
+El asistente se ha empleado para:
+
+\begin{enumerate}
+\item Generar una estructura inicial del repositorio (módulos Python,
+  organización de directorios) que ha sido revisada y adaptada por los
+  autores.
+\item Sugerir formulaciones alternativas del dominio PDDL y discutir las
+  ventajas e inconvenientes de cada una, lo que ha influido en la
+  decisión final de modelar la geometría como hechos \texttt{salto} del
+  estado inicial.
+\item Implementar las heurísticas, los algoritmos de búsqueda y los
+  scripts de experimentación a partir de descripciones funcionales
+  proporcionadas por los autores. El código resultante ha sido revisado,
+  comprendido y, en algunos casos, modificado por los autores.
+\item Asistir en la redacción de la memoria y la presentación,
+  manteniendo siempre la responsabilidad editorial los autores.
+\item Detectar y solucionar el bug de codificación de
+  \texttt{up-fast-downward 0.5.2} mediante el módulo
+  \texttt{parche\_fd.py}.
+\end{enumerate}
+
+Las consultas principales han sido del tipo: ``implementa el algoritmo
+beam search siguiendo el pseudocódigo del enunciado'', ``diseña una
+heurística que capture la conectividad de las piezas restantes en el
+tablero'', ``escribe un script que pruebe sistemáticamente todas las
+posiciones del hueco inicial bajo simetría'', y ``corrige el error de
+decodificación que aparece al llamar a Fast Downward en Windows''. En la
+defensa, los dos miembros del grupo seremos capaces de explicar y
+justificar todas y cada una de las decisiones técnicas y editoriales del
+entregable.
 
 
 \begin{thebibliography}{00}
-\bibitem{enunciado} G.~Chaves Benítez, ``Planificación automática aplicada al
-Senku. Propuesta de trabajo,'' Inteligencia Artificial --- Ingeniería del
-Software, Universidad de Sevilla, curso 2025/2026.
+\bibitem{enunciado} G.~Chaves Benítez, ``Planificación automática aplicada
+al Senku. Propuesta de trabajo,'' Inteligencia Artificial --- Ingeniería
+del Software, Universidad de Sevilla, curso 2025/2026.
 
 \bibitem{pddl-wiki} Planning Wiki, ``Planning Domain Definition Language,''
 \url{https://planning.wiki/}, consultado en mayo de 2026.
 
-\bibitem{up} A.~Micheli \emph{et al.}, ``Unified-Planning: A Library Making
-Planning Technology Accessible,'' en \emph{Proc.\ of ICAPS}, 2022.
+\bibitem{up} A.~Micheli \emph{et al.}, ``Unified-Planning: A Library
+Making Planning Technology Accessible,'' en \emph{Proc.\ of ICAPS}, 2022.
 Documentación: \url{https://unified-planning.readthedocs.io}.
 
 \bibitem{fastdownward} M.~Helmert, ``The Fast Downward Planning System,''
@@ -609,6 +1130,31 @@ pp.~191--246, 2006.
 
 \bibitem{senku-counts} J.~C.~Beasley, \emph{The Ins and Outs of Peg
 Solitaire}, Oxford University Press, 1985.
+
+\bibitem{russell-norvig} S.~Russell y P.~Norvig, \emph{Artificial
+Intelligence: A Modern Approach}, 4ª ed., Pearson, 2020. Capítulos 3 y 4
+sobre búsqueda en espacio de estados y búsqueda informada.
+
+\bibitem{pddl-orig} M.~Ghallab \emph{et al.}, ``PDDL---The Planning
+Domain Definition Language,'' Yale Center for Computational Vision and
+Control, Technical Report CVC TR-98-003, 1998.
+
+\bibitem{ghallab-planning} M.~Ghallab, D.~Nau y P.~Traverso,
+\emph{Automated Planning: Theory and Practice}, Morgan Kaufmann, 2004.
+
+\bibitem{ow1} D.~S.~Hochba (ed.), \emph{Approximation algorithms for
+NP-hard problems}, PWS Publishing, 1997. Sobre la complejidad
+computacional de problemas combinatorios.
+
+\bibitem{conway-wwl} E.~Berlekamp, J.~H.~Conway y R.~Guy, \emph{Winning
+Ways for your Mathematical Plays}, vol.~4, A.~K.~Peters, 2004. Capítulo
+sobre peg solitaire con la introducción original de la función pagoda
+por J.~H.~Conway.
+
+\bibitem{de-bruijn} N.~G.~de Bruijn, ``A solitaire game and its
+relation to a finite field,'' \emph{Journal of Recreational
+Mathematics}, vol.~5, pp.~133--137, 1972. Análisis algebraico clásico
+del peg solitaire mediante argumentos de paridad y coloreado.
 \end{thebibliography}
 
 

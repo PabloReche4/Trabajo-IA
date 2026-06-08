@@ -193,13 +193,13 @@ Antes de evaluar nuestras implementaciones, lanzamos Fast Downward
 sobre cada variante para establecer un baseline. Se utiliza el patrón
 de la Práctica 4 (`OneshotPlanner(name="fast-downward")`):
 
-| # | Estado de FD                  | Movs | Tiempo (s) |
-|---|-------------------------------|-----:|-----------:|
-| 1 | `SOLVED_SATISFICING`          |   31 |     10,6   |
-| 2 | `UNSOLVABLE_INCOMPLETELY`     |    — |     22,1   |
-| 3 | `TIMEOUT` (60 s)              |    — |    >60     |
-| 4 | `UNSOLVABLE_INCOMPLETELY`     |    — |      3,2   |
-| 5 | `TIMEOUT` (60 s)              |    — |    >60     |
+| # | Tablero                  | Estado de FD              | Movs | Tiempo (s) |
+|---|--------------------------|---------------------------|-----:|-----------:|
+| 1 | Octógono                 | `TIMEOUT`                  |    — |   >300     |
+| 2 | Cruz griega grande       | `TIMEOUT`                  |    — |    >60     |
+| 3 | Cruz asimétrica          | `SOLVED_SATISFICING`       |   37 |      8,1   |
+| 4 | Cruz griega clásica      | `SOLVED_SATISFICING`       |   31 |     17,9   |
+| 5 | Rombo                    | `TIMEOUT`                  |    — |    >60     |
 
 Datos tras aplicar `parche_fd.py`, que neutraliza un bug de
 `up-fast-downward 0.5.2` en Windows al decodificar la salida de FD.

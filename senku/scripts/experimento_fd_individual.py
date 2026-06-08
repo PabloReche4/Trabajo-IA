@@ -10,6 +10,13 @@ import time
 
 
 def _fd(variante: int):
+    import sys as _sys
+    from pathlib import Path as _Path
+    _raiz = _Path(__file__).resolve().parents[2]
+    if str(_raiz) not in _sys.path:
+        _sys.path.insert(0, str(_raiz))
+    from senku.src.parche_fd import aplicar_parche
+    aplicar_parche()
     from unified_planning.io import PDDLReader
     from unified_planning.shortcuts import OneshotPlanner, get_environment
     get_environment().credits_stream = None
