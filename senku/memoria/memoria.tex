@@ -12,6 +12,21 @@
 % Escritura mejorada de tablas
 \usepackage{booktabs}
 
+% Permite forzar posición exacta de flotantes con [H]; necesario para
+% que las tablas no salten al inicio de página.
+\usepackage{float}
+
+% Relajamos las restricciones de LaTeX sobre la colocación de flotantes
+% (tablas y figuras), para que aparezcan cerca del texto que las menciona
+% y no se cuelen entre párrafos sin contexto.
+\renewcommand{\topfraction}{0.9}
+\renewcommand{\bottomfraction}{0.8}
+\renewcommand{\textfraction}{0.07}
+\renewcommand{\floatpagefraction}{0.7}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+
 % Escritura mejorada de citas bibliográficas
 \usepackage{cite}
 
@@ -311,7 +326,7 @@ dominio} para topologías arbitrarias: cualquier tablero ---cruz, cuadrado,
 diamante, etc.--- se traduce en su correspondiente conjunto de hechos
 \texttt{salto} sin necesidad de modificar el dominio.
 
-\begin{figure}
+\begin{figure}[!htbp]
 \centering
 \small
 \begin{verbatim}
@@ -381,7 +396,7 @@ El enunciado define cinco variantes del Senku en su Figura~3 (Sección~3.2)
 y obliga a resolver las variantes 1, 3 y 5. La Tabla~\ref{tab:variantes}
 resume las dimensiones de cada una.
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{Variantes del Senku implementadas según la Figura~3 del enunciado.}
 \label{tab:variantes}
 \centering
@@ -543,7 +558,7 @@ número de nodos (parte común); y (ii)~el algoritmo \emph{beam search}
 correspondiente a la convocatoria de junio. El pseudocódigo de este último
 puede consultarse en la Fig.~\ref{pcd:beam}.
 
-\begin{figure}
+\begin{figure}[!htbp]
 \begin{pseudo}*
   \hd{\fn{beam-search}}(P, h, \beta) \\*
   \multicolumn{2}{l}{\textbf{Entrada}: problema $P$, heurística $h$, anchura $\beta$} \\*
@@ -644,7 +659,7 @@ Este patrón ---planificadores satisficing limitados por la estructura
 densa del estado--- es un fenómeno conocido en la literatura sobre
 peg solitaire y problemas combinatorios análogos.
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{Resolución con Fast Downward.}
 \label{tab:fd-resultados}
 \centering
@@ -675,7 +690,7 @@ experimento dentro del presupuesto; \emph{beam search} se ejecuta con
 $\beta = 200$, tres reinicios estocásticos y un máximo de 80~iteraciones por
 intento, bajo dos heurísticas: pagoda clásica y compuesta.
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{BFS y beam search propios (sin alcanzar la meta en ninguna variante).}
 \label{tab:propios}
 \centering
@@ -729,7 +744,7 @@ empíricamente la observación teórica de Beasley~\cite{senku-counts}: las
 trayectorias que terminan en una pieza son extremadamente raras dentro
 del espacio de juego.
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{Distribución del número de piezas finales en 80\,797 partidas aleatorias sobre la cruz inglesa (60~s de cómputo).}
 \label{tab:aleatorio}
 \centering
@@ -760,7 +775,7 @@ la cruz inglesa con $\beta = 300$, explorando sólo $\approx\!7\,800$ nodos
 (Tabla~\ref{tab:conectividad}). El criterio de meta es el relajado (una
 única pieza en cualquier casilla), conforme a la aclaración del profesor.
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{Beam search con heurística de conectividad (meta relajada, hueco central).}
 \label{tab:conectividad}
 \centering
@@ -791,7 +806,7 @@ El barrido exhaustivo (probando \textbf{todos} los huecos posibles bajo
 simetría) confirma la influencia de la posición del hueco
 (Tabla~\ref{tab:huecos}).
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{Barrido exhaustivo del hueco inicial (beam iterativo + conectividad, meta relajada). \emph{Min} = mínimo absoluto de piezas alcanzado entre todos los huecos.}
 \label{tab:huecos}
 \centering
@@ -840,7 +855,7 @@ la búsqueda en modo estricto se realiza desde uno de ellos, hay
 esperanza razonable de terminar con la última pieza en la propia
 casilla del hueco.
 
-\begin{table}
+\begin{table}[!htbp]
 \caption{Huecos iniciales que admiten solución según el barrido (modo relajado). Las coordenadas son (fila, columna) 0-indexed.}
 \label{tab:huecos-detalle}
 \centering

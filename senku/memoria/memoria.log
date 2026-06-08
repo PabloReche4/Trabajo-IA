@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  7 JUN 2026 17:20
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  8 JUN 2026 17:18
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -310,15 +310,23 @@ Package: booktabs 2020/01/12 v1.61803398 Publication quality tables
 \@thisruleclass=\count312
 \@lastruleclass=\count313
 \@thisrulewidth=\dimen261
-) (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/cite\cite.sty
+) (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/float\float.sty
+Package: float 2001/11/08 v1.3d Float enhancements (AL)
+\c@float@type=\count314
+\float@exts=\toks29
+\float@box=\box59
+\@float@everytoks=\toks30
+\@floatcapt=\box60
+)
+(C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/cite\cite.sty
 LaTeX Info: Redefining \cite on input line 302.
 LaTeX Info: Redefining \nocite on input line 332.
 Package: cite 2015/02/27  v 5.5
 )
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/base\inputenc.sty
 Package: inputenc 2024/02/08 v1.3d Input encoding file
-\inpenc@prehook=\toks29
-\inpenc@posthook=\toks30
+\inpenc@prehook=\toks31
+\inpenc@posthook=\toks32
 )
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/base\fontenc.sty
 Package: fontenc 2025/07/18 v2.1d Standard LaTeX package
@@ -331,37 +339,37 @@ File: t1ptm.fd 2001/06/04 font definitions for T1/ptm.
 (memoria.aux)
 \openout1 = `memoria.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 39.
-LaTeX Font Info:    ... okay on input line 39.
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for OMS/cmsy/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for TS1/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 54.
+LaTeX Font Info:    ... okay on input line 54.
 
 -- Lines per column: 56 (exact).
 
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/context/base/mkii\supp-pdf.mk
 ii
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count314
+\scratchcounter=\count315
 \scratchdimen=\dimen262
-\scratchbox=\box59
-\nofMPsegments=\count315
-\nofMParguments=\count316
-\everyMPshowfont=\toks31
-\MPscratchCnt=\count317
+\scratchbox=\box61
+\nofMPsegments=\count316
+\nofMParguments=\count317
+\everyMPshowfont=\toks33
+\MPscratchCnt=\count318
 \MPscratchDim=\dimen263
-\MPnumerator=\count318
-\makeMPintoPDFobject=\count319
-\everyMPtoPDFconversion=\toks32
+\MPnumerator=\count319
+\makeMPintoPDFobject=\count320
+\everyMPtoPDFconversion=\toks34
 )
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/epstopdf-pkg\epstopdf-b
 ase.sty
@@ -407,18 +415,18 @@ G,.JBIG2,.JB2,.eps]
 fg
 File: epstopdf-sys.cfg 2021/03/18 v2.0 Configuration of epstopdf for MiKTeX
 ))
-LaTeX Font Info:    Trying to load font information for T1+pcr on input line 68
+LaTeX Font Info:    Trying to load font information for T1+pcr on input line 83
 .
  (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1pcr.fd
 File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
 )
-Underfull \hbox (badness 6047) in paragraph at lines 99--102
+Underfull \hbox (badness 6047) in paragraph at lines 114--117
 []\T1/ptm/b/it/9 Palabras clave\T1/ptm/b/n/9 ---Inteligencia Ar-ti-fi-cial, pla
 n-i-fi-cación au-
  []
 
 
-Underfull \hbox (badness 5954) in paragraph at lines 153--159
+Underfull \hbox (badness 5954) in paragraph at lines 168--174
 []\T1/ptm/m/n/10 Un sis-tema en Python, basado en la bib-lioteca
  []
 
@@ -428,174 +436,175 @@ tis/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 ]
 LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <10> not available
-(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 189.
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 204.
 
-Underfull \hbox (badness 10000) in paragraph at lines 203--215
+Underfull \hbox (badness 10000) in paragraph at lines 218--230
 []\T1/ptm/m/n/10 La bib-lioteca Python \T1/pcr/m/n/10 unified-planning \T1/ptm/
 m/n/10 [3]
  []
 
 
-Underfull \hbox (badness 4366) in paragraph at lines 203--215
+Underfull \hbox (badness 4366) in paragraph at lines 218--230
 \T1/ptm/m/n/10 pro-por-ciona una capa de ab-strac-ción que per-mite (i)
  []
 
 
-Underfull \hbox (badness 2573) in paragraph at lines 203--215
+Underfull \hbox (badness 2573) in paragraph at lines 218--230
 \T1/ptm/m/n/10 leer y es-cribir ficheros PDDL me-di-ante \T1/pcr/m/n/10 PDDLRea
 der
  []
 
 
-Underfull \hbox (badness 3989) in paragraph at lines 203--215
+Underfull \hbox (badness 3989) in paragraph at lines 218--230
 \T1/ptm/m/n/10 y \T1/pcr/m/n/10 PDDLWriter\T1/ptm/m/n/10 ; (ii) con-struir prob
 -le-mas di-rec-ta-mente
  []
 
 
-Underfull \hbox (badness 1502) in paragraph at lines 203--215
+Underfull \hbox (badness 1502) in paragraph at lines 218--230
 \T1/ptm/m/n/10 en código me-di-ante \T1/pcr/m/n/10 Problem\T1/ptm/m/n/10 , \T1/
 pcr/m/n/10 Fluent\T1/ptm/m/n/10 , \T1/pcr/m/n/10 UserType \T1/ptm/m/n/10 e
  []
 
 
-Underfull \hbox (badness 1796) in paragraph at lines 203--215
+Underfull \hbox (badness 1796) in paragraph at lines 218--230
 \T1/pcr/m/n/10 InstantaneousAction\T1/ptm/m/n/10 ; y (iii) in-vo-car plan-i-fi-
 cadores
  []
 
 
-Underfull \hbox (badness 2726) in paragraph at lines 203--215
+Underfull \hbox (badness 2726) in paragraph at lines 218--230
 \T1/ptm/m/n/10 ex-ter-nos a través de \T1/pcr/m/n/10 OneshotPlanner\T1/ptm/m/n/
 10 . La prin-ci-pal
  []
 
 ! Undefined control sequence.
-l.272 $\pi:\text{Casillas}\to\mathbb
+l.287 $\pi:\text{Casillas}\to\mathbb
                                     {Z}_{\geq 1}$ es una \emph{funciÃ³n pago...
 
 ? 
 [2]
-Underfull \hbox (badness 10000) in paragraph at lines 344--352
+Underfull \hbox (badness 10000) in paragraph at lines 359--367
 []\T1/ptm/m/n/10 Para cada vari-ante se gen-era un
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 344--352
+Underfull \hbox (badness 10000) in paragraph at lines 359--367
 \T1/ptm/m/n/10 fichero de prob-lema me-di-ante el co-mando
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 344--352
+Underfull \hbox (badness 10000) in paragraph at lines 359--367
 [][]\T1/pcr/m/n/10 python -m senku.src.cli generar[]\T1/ptm/m/n/10 , que es-cri
 be
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 363--368
+Underfull \hbox (badness 10000) in paragraph at lines 378--383
 \T1/pcr/m/n/10 mover-vertical-arriba\T1/ptm/m/n/10 ,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 363--368
+Underfull \hbox (badness 10000) in paragraph at lines 378--383
 \T1/pcr/m/n/10 mover-vertical-abajo\T1/ptm/m/n/10 ) con pred-i-ca-dos
  []
 
 
-Underfull \hbox (badness 4013) in paragraph at lines 363--368
+Underfull \hbox (badness 4013) in paragraph at lines 378--383
 \T1/ptm/m/n/10 el número de ac-ciones del do-minio sin apor-tar
  []
 
 
-Underfull \hbox (badness 1688) in paragraph at lines 373--376
+Underfull \hbox (badness 1688) in paragraph at lines 388--391
 []\T1/ptm/m/n/10 La de-cisión fi-nal ---\T1/pcr/m/n/10 salto \T1/ptm/m/n/10 com
 o he-cho es-tático del
  []
 
 [3]
 ! Undefined control sequence.
-l.519   mientras $F \neq \varnothing
+l.567   mientras $F \neq \varnothing
                                     $ hacer \\+
 ? 
 
-Overfull \hbox (18.89693pt too wide) in paragraph at lines 515--530
+Overfull \hbox (18.89693pt too wide) in paragraph at lines 563--578
  [] 
  []
 
 [4]
-Underfull \hbox (badness 5189) in paragraph at lines 569--573
+Underfull \hbox (badness 5189) in paragraph at lines 617--621
 \T1/ptm/m/it/10 .pddl, uno con el do-minio y otro con una in-stan-
  []
 
 
-Underfull \hbox (badness 3579) in paragraph at lines 569--573
+Underfull \hbox (badness 3579) in paragraph at lines 617--621
 \T1/ptm/m/it/10 cia del prob-lema''\T1/ptm/m/n/10 --- se cumple me-di-ante un m
 ó-dulo
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 594--607
+Underfull \hbox (badness 10000) in paragraph at lines 642--652
 []\T1/ptm/m/n/10 Antes de eval-uar la im-ple-mentación propia, se
  []
 
 
-Underfull \hbox (badness 1939) in paragraph at lines 594--607
+Underfull \hbox (badness 1939) in paragraph at lines 642--652
 \T1/ptm/m/n/10 lanzó Fast Down-ward so-bre cada vari-ante a través de
  []
 
 
-LaTeX Warning: Reference `tab:aleatorio' on page 5 undefined on input line 686.
-
+Underfull \hbox (badness 2856) in paragraph at lines 642--652
+\T1/pcr/m/n/10 unified-planning \T1/ptm/m/n/10 con la re-c-eta de la Prác-tica 
+4
+ []
 
 [5]
+Underfull \vbox (badness 2310) has occurred while \output is active []
+
+
 
 LaTeX Font Warning: Font shape `T1/ptm/m/scit' undefined
-(Font)              using `T1/ptm/m/it' instead on input line 756.
-
-
-LaTeX Warning: Reference `tab:huecos-detalle' on page 6 undefined on input line
- 786.
+(Font)              using `T1/ptm/m/it' instead on input line 810.
 
 [6] [7]
-Underfull \hbox (badness 3872) in paragraph at lines 1005--1012
+Underfull \hbox (badness 3872) in paragraph at lines 1085--1092
 []\T1/ptm/m/n/10 Todo el código, los ficheros PDDL, los note-books
  []
 
 
-Underfull \hbox (badness 2197) in paragraph at lines 1005--1012
+Underfull \hbox (badness 2197) in paragraph at lines 1085--1092
 \T1/ptm/m/n/10 de ex-per-i-mentación y los CSV con los re-sul-ta-dos es-
  []
 
 
-Underfull \hbox (badness 2961) in paragraph at lines 1005--1012
+Underfull \hbox (badness 2961) in paragraph at lines 1085--1092
 \T1/ptm/m/n/10 Los ex-per-i-men-tos se re-pro-ducen eje-cu-tando los scripts
  []
 
-
-Underfull \hbox (badness 3058) in paragraph at lines 1034--1037
+[8]
+Underfull \hbox (badness 3058) in paragraph at lines 1114--1117
 []\T1/ptm/m/n/10 Detectar y solu-cionar el bug de cod-i-fi-cación de
  []
 
 
-Underfull \hbox (badness 1354) in paragraph at lines 1034--1037
+Underfull \hbox (badness 1354) in paragraph at lines 1114--1117
 \T1/pcr/m/n/10 up-fast-downward 0.5.2 \T1/ptm/m/n/10 me-di-ante el mó-dulo
  []
 
 ! Undefined control sequence.
-l.1056 \url
+l.1136 \url
            {https://planning.wiki/}, consultado en mayo de 2026.
 ? 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1055--1057
+Underfull \hbox (badness 10000) in paragraph at lines 1135--1137
 []\T1/ptm/m/n/8 Planning Wiki, ``Plan-ning Do-main Def-i-ni-tion Lan-guage,''
  []
 
 ! Undefined control sequence.
-l.1060 DocumentaciÃ³n: \url
+l.1140 DocumentaciÃ³n: \url
                            {https://unified-planning.readthedocs.io}.
 ? 
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
-070.
+150.
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
@@ -610,27 +619,20 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[8] (memoria.aux)
+[9] (memoria.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
  ***********
-
-
-LaTeX Warning: There were undefined references.
-
-
-LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
-
  ) 
 Here is how much of TeX's memory you used:
- 6007 strings out of 467871
- 105765 string characters out of 5418376
- 536999 words of memory out of 5000000
- 34770 multiletter control sequences out of 15000+600000
+ 6080 strings out of 467871
+ 106909 string characters out of 5418376
+ 542529 words of memory out of 5000000
+ 34839 multiletter control sequences out of 15000+600000
  754217 words of font info for 162 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
- 59i,17n,76p,324b,391s stack positions out of 10000i,1000n,20000p,200000b,200000s
+ 59i,17n,76p,324b,393s stack positions out of 10000i,1000n,20000p,200000b,200000s
 <C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsfonts/cm/
 cmex10.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/ams
 fonts/cm/cmmi10.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/p
@@ -655,9 +657,9 @@ Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/betis/AppData/Local/
 Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/betis/AppData/Local
 /Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/betis/AppData/Local
 /Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on memoria.pdf (8 pages, 303607 bytes).
+Output written on memoria.pdf (9 pages, 307393 bytes).
 PDF statistics:
- 140 PDF objects out of 1000 (max. 8388607)
+ 143 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 
