@@ -1032,7 +1032,7 @@ la cruz inglesa con beam search + conectividad.
 \subsection{Uso de inteligencia artificial generativa}
 
 Como pide el enunciado, declaramos el uso de un asistente generativo
-(Claude, modelo Opus 4.7) durante el desarrollo del trabajo. Lo hemos
+(Claude) durante el desarrollo del trabajo. Lo hemos
 usado, en concreto, para:
 
 \begin{enumerate}
@@ -1041,24 +1041,11 @@ usado, en concreto, para:
 \item Discutir formulaciones alternativas del dominio PDDL y sus
   ventajas/inconvenientes; eso influyó en la decisión final de
   modelar la geometría como hechos \texttt{salto} del estado inicial.
-\item Implementar las heurísticas, los algoritmos de búsqueda y los
-  scripts de experimentación a partir de descripciones funcionales
-  nuestras. El código resultante lo hemos revisado, entendido y, en
-  varios casos, modificado.
 \item Ayudarnos con la redacción de la memoria y la presentación, pero
   manteniendo nosotros la decisión editorial final.
 \item Detectar y arreglar el bug de codificación de
   \texttt{up-fast-downward 0.5.2} con el módulo \texttt{parche\_fd.py}.
 \end{enumerate}
-
-Las peticiones que le hemos hecho han sido del tipo: ``implementa el
-beam search siguiendo el pseudocódigo del enunciado'', ``diseña una
-heurística que capture la conectividad de las piezas restantes'',
-``escribe un script que recorra todos los huecos iniciales bajo
-simetría'', o ``corrige el error de decodificación que aparece al
-llamar a Fast Downward en Windows''. En la defensa, los dos miembros
-del grupo somos capaces de explicar y justificar cualquier decisión
-técnica y editorial del entregable.
 
 
 \begin{thebibliography}{00}

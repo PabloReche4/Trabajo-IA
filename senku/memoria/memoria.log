@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  8 JUN 2026 17:57
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  8 JUN 2026 18:50
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -564,30 +564,30 @@ Underfull \hbox (badness 2547) in paragraph at lines 1023--1030
  []
 
 
-Underfull \hbox (badness 7133) in paragraph at lines 1050--1052
+Underfull \hbox (badness 7133) in paragraph at lines 1046--1048
 []\T1/ptm/m/n/10 Detectar y ar-reglar el bug de cod-i-fi-cación de
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1050--1052
+Underfull \hbox (badness 10000) in paragraph at lines 1046--1048
 \T1/pcr/m/n/10 up-fast-downward 0.5.2 \T1/ptm/m/n/10 con el mó-dulo
  []
 
 ! Undefined control sequence.
-l.1070 \url
+l.1057 \url
            {https://planning.wiki/}, consultado en mayo de 2026.
 ? 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1069--1071
+Underfull \hbox (badness 10000) in paragraph at lines 1056--1058
 []\T1/ptm/m/n/8 Planning Wiki, ``Plan-ning Do-main Def-i-ni-tion Lan-guage,''
  []
 
 ! Undefined control sequence.
-l.1074 DocumentaciÃ³n: \url
+l.1061 DocumentaciÃ³n: \url
                            {https://unified-planning.readthedocs.io}.
 ? 
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
-084.
+071.
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
@@ -639,7 +639,7 @@ KTeX/fonts/type1/urw/courier/ucrro8a.pfb><C:/Users/betis/AppData/Local/Programs
 /MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/betis/AppData/Local/Program
 s/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/betis/AppData/Local/Program
 s/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on memoria.pdf (8 pages, 294141 bytes).
+Output written on memoria.pdf (8 pages, 293577 bytes).
 PDF statistics:
  135 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
