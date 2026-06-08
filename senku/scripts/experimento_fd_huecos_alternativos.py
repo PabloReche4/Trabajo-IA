@@ -1,8 +1,9 @@
 """Prueba Fast Downward sobre V1 y V5 con huecos iniciales alternativos.
 
 Beam search ha demostrado que las variantes 1 (octogono) y 5 (rombo)
-con sus huecos iniciales nominales son dificiles para FD. Probamos aqui
-huecos alternativos que el barrido empirico ha clasificado como
+con sus huecos iniciales nominales son dificiles para FD.
+
+Probamos aqui huecos alternativos que el barrido empirico ha clasificado como
 resolubles, con la esperanza de que esos sean mas faciles para FD
 tambien.
 """

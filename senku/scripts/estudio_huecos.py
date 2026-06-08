@@ -1,22 +1,22 @@
-"""Estudio de la posicion del hueco inicial en la cruz inglesa.
+"""
+Estudio de distintas posiciones iniciales del hueco en la cruz inglesa.
 
-El profesor valora positivamente probar, para un mismo tablero, distintas
-disposiciones del hueco inicial y encontrar aquellas en las que es
-plausible terminar con la ultima pieza en ese mismo hueco (el problema
-"complementario" clasico del peg solitaire).
+Este programa genera automáticamente varios problemas de peg solitaire
+sobre el tablero de la cruz inglesa. Para cada casilla candidata se crea
+una configuración inicial en la que dicha casilla está vacía y se define
+como objetivo terminar la partida con una única ficha situada exactamente
+en esa misma posición.
 
-Para cada posicion candidata del hueco inicial se construye un problema
-en el que:
-  - el hueco inicial esta en la casilla h,
-  - la meta es terminar con una unica pieza exactamente en h.
-y se resuelve con Fast Downward (planificador completo). Si encuentra
-plan, esa posicion es "complementaria-resoluble".
+Cada instancia se modela mediante Unified Planning y se resuelve con el
+planificador Fast Downward. La ejecución de cada problema se realiza en
+un subproceso independiente con un tiempo máximo de ejecución para evitar
+bloqueos prolongados.
 
-Por simetria del tablero solo hace falta probar una posicion por clase
-de simetria, pero aqui recorremos todas las casillas para tener un mapa
-completo. Cada problema se ejecuta en un subproceso con timeout.
+Los resultados obtenidos para cada posición incluyen el estado de la
+búsqueda, el número de movimientos del plan encontrado y el tiempo de
+resolución. Finalmente, toda la información se almacena en el archivo:
 
-Salida: senku/resultados/estudio_huecos.csv
+senku/resultados/estudio_huecos.csv
 """
 
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as PFTimeout

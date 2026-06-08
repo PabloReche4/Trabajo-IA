@@ -2,6 +2,7 @@
 
 Se utiliza un proceso hijo por variante con timeout para evitar que la
 ejecucion completa se bloquee si una variante concreta es muy costosa.
+
 Los resultados se imprimen por consola y se guardan en
 `senku/resultados/fast_downward.csv`.
 """
