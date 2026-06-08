@@ -1,4 +1,4 @@
-This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  8 JUN 2026 17:18
+This is pdfTeX, Version 3.141592653-2.6-1.40.28 (MiKTeX 25.12) (preloaded format=pdflatex 2026.5.27)  8 JUN 2026 17:57
 entering extended mode
  restricted \write18 enabled.
  %&-line parsing enabled.
@@ -420,14 +420,24 @@ LaTeX Font Info:    Trying to load font information for T1+pcr on input line 83
  (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\t1pcr.fd
 File: t1pcr.fd 2001/06/04 font definitions for T1/pcr.
 )
-Underfull \hbox (badness 6047) in paragraph at lines 114--117
+Underfull \hbox (badness 6047) in paragraph at lines 108--111
 []\T1/ptm/b/it/9 Palabras clave\T1/ptm/b/n/9 ---Inteligencia Ar-ti-fi-cial, pla
 n-i-fi-cación au-
  []
 
 
-Underfull \hbox (badness 5954) in paragraph at lines 168--174
-[]\T1/ptm/m/n/10 Un sis-tema en Python, basado en la bib-lioteca
+Underfull \hbox (badness 10000) in paragraph at lines 152--157
+[]\T1/ptm/m/n/10 Un sis-tema en Python con-stru-ido so-bre
+ []
+
+
+Underfull \hbox (badness 2269) in paragraph at lines 152--157
+\T1/pcr/m/n/10 unified-planning \T1/ptm/m/n/10 (al es-tilo de la Prác-tica 4)
+ []
+
+
+Underfull \hbox (badness 2790) in paragraph at lines 160--163
+[]\T1/ptm/m/n/10 Cinco heurís-ti-cas com-para-das: dos asig-na-ciones de
  []
 
 [1{C:/Users/betis/AppData/Local/MiKTeX/fonts/map/pdftex/pdftex.map}{C:/Users/be
@@ -436,175 +446,148 @@ tis/AppData/Local/Programs/MiKTeX/fonts/enc/dvips/base/8r.enc}
 
 ]
 LaTeX Font Info:    Font shape `T1/pcr/m/it' in size <10> not available
-(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 204.
+(Font)              Font shape `T1/pcr/m/sl' tried instead on input line 184.
 
-Underfull \hbox (badness 10000) in paragraph at lines 218--230
-[]\T1/ptm/m/n/10 La bib-lioteca Python \T1/pcr/m/n/10 unified-planning \T1/ptm/
-m/n/10 [3]
+Underfull \hbox (badness 1509) in paragraph at lines 198--208
+[]\T1/ptm/m/n/10 La bib-lioteca \T1/pcr/m/n/10 unified-planning \T1/ptm/m/n/10 
+[3] es una capa
  []
 
 
-Underfull \hbox (badness 4366) in paragraph at lines 218--230
-\T1/ptm/m/n/10 pro-por-ciona una capa de ab-strac-ción que per-mite (i)
+Underfull \hbox (badness 3942) in paragraph at lines 198--208
+\T1/ptm/m/n/10 sirve para tres cosas: leer y es-cribir ficheros PDDL
  []
 
 
-Underfull \hbox (badness 2573) in paragraph at lines 218--230
-\T1/ptm/m/n/10 leer y es-cribir ficheros PDDL me-di-ante \T1/pcr/m/n/10 PDDLRea
-der
+Underfull \hbox (badness 10000) in paragraph at lines 198--208
+\T1/ptm/m/n/10 (\T1/pcr/m/n/10 PDDLReader\T1/ptm/m/n/10 , \T1/pcr/m/n/10 PDDLWr
+iter\T1/ptm/m/n/10 ), con-struir prob-le-mas
  []
 
 
-Underfull \hbox (badness 3989) in paragraph at lines 218--230
-\T1/ptm/m/n/10 y \T1/pcr/m/n/10 PDDLWriter\T1/ptm/m/n/10 ; (ii) con-struir prob
--le-mas di-rec-ta-mente
- []
-
-
-Underfull \hbox (badness 1502) in paragraph at lines 218--230
-\T1/ptm/m/n/10 en código me-di-ante \T1/pcr/m/n/10 Problem\T1/ptm/m/n/10 , \T1/
-pcr/m/n/10 Fluent\T1/ptm/m/n/10 , \T1/pcr/m/n/10 UserType \T1/ptm/m/n/10 e
- []
-
-
-Underfull \hbox (badness 1796) in paragraph at lines 218--230
-\T1/pcr/m/n/10 InstantaneousAction\T1/ptm/m/n/10 ; y (iii) in-vo-car plan-i-fi-
-cadores
- []
-
-
-Underfull \hbox (badness 2726) in paragraph at lines 218--230
-\T1/ptm/m/n/10 ex-ter-nos a través de \T1/pcr/m/n/10 OneshotPlanner\T1/ptm/m/n/
-10 . La prin-ci-pal
+Underfull \hbox (badness 3907) in paragraph at lines 198--208
+\T1/ptm/m/n/10 desde código con \T1/pcr/m/n/10 Problem\T1/ptm/m/n/10 , \T1/pcr/
+m/n/10 Fluent\T1/ptm/m/n/10 , \T1/pcr/m/n/10 UserType \T1/ptm/m/n/10 y
  []
 
 ! Undefined control sequence.
-l.287 $\pi:\text{Casillas}\to\mathbb
+l.259 $\pi:\text{Casillas}\to\mathbb
                                     {Z}_{\geq 1}$ es una \emph{funciÃ³n pago...
 
 ? 
 [2]
-Underfull \hbox (badness 10000) in paragraph at lines 359--367
-[]\T1/ptm/m/n/10 Para cada vari-ante se gen-era un
+Underfull \hbox (badness 10000) in paragraph at lines 332--338
+[]\T1/ptm/m/n/10 Cada prob-lema se gen-era con
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 359--367
-\T1/ptm/m/n/10 fichero de prob-lema me-di-ante el co-mando
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 359--367
+Underfull \hbox (badness 10000) in paragraph at lines 332--338
 [][]\T1/pcr/m/n/10 python -m senku.src.cli generar[]\T1/ptm/m/n/10 , que es-cri
 be
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 378--383
+Underfull \hbox (badness 10000) in paragraph at lines 348--352
 \T1/pcr/m/n/10 mover-vertical-arriba\T1/ptm/m/n/10 ,
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 378--383
+Underfull \hbox (badness 10000) in paragraph at lines 348--352
 \T1/pcr/m/n/10 mover-vertical-abajo\T1/ptm/m/n/10 ) con pred-i-ca-dos
  []
 
 
-Underfull \hbox (badness 4013) in paragraph at lines 378--383
-\T1/ptm/m/n/10 el número de ac-ciones del do-minio sin apor-tar
+Underfull \hbox (badness 1924) in paragraph at lines 348--352
+\T1/pcr/m/n/10 adyacente-h \T1/ptm/m/n/10 y \T1/pcr/m/n/10 adyacente-v\T1/ptm/m
+/n/10 . Eso trip-lica el
  []
 
 
-Underfull \hbox (badness 1688) in paragraph at lines 388--391
-[]\T1/ptm/m/n/10 La de-cisión fi-nal ---\T1/pcr/m/n/10 salto \T1/ptm/m/n/10 com
-o he-cho es-tático del
- []
+Underfull \vbox (badness 1097) has occurred while \output is active []
 
-[3]
+ [3]
 ! Undefined control sequence.
-l.567   mientras $F \neq \varnothing
+l.532   mientras $F \neq \varnothing
                                     $ hacer \\+
 ? 
 
-Overfull \hbox (18.89693pt too wide) in paragraph at lines 563--578
+Overfull \hbox (18.89693pt too wide) in paragraph at lines 528--543
  [] 
  []
 
+
+Underfull \hbox (badness 1902) in paragraph at lines 558--566
+[]\T1/ptm/m/n/10 La se-gunda, \T1/ptm/m/it/10 beam search it-er-a-tivo\T1/ptm/m
+/n/10 , va probando an-
+ []
+
+
+Underfull \hbox (badness 3417) in paragraph at lines 558--566
+\T1/ptm/m/n/10 churas cre-cientes $\OMS/cmsy/m/n/10 f\OML/cmm/m/it/10 ^^L[] < ^
+^L[] < [] \OMS/cmsy/m/n/10 g$ \T1/ptm/m/n/10 (por de-fecto
+ []
+
+
+Underfull \hbox (badness 1546) in paragraph at lines 567--573
+[]\T1/ptm/m/n/10 El \T1/pcr/m/n/10 Resultado \T1/ptm/m/n/10 que de-vuel-ven es-
+tas búsquedas tiene
+ []
+
 [4]
-Underfull \hbox (badness 5189) in paragraph at lines 617--621
-\T1/ptm/m/it/10 .pddl, uno con el do-minio y otro con una in-stan-
- []
-
-
-Underfull \hbox (badness 3579) in paragraph at lines 617--621
-\T1/ptm/m/it/10 cia del prob-lema''\T1/ptm/m/n/10 --- se cumple me-di-ante un m
-ó-dulo
- []
-
-
-Underfull \hbox (badness 10000) in paragraph at lines 642--652
-[]\T1/ptm/m/n/10 Antes de eval-uar la im-ple-mentación propia, se
- []
-
-
-Underfull \hbox (badness 1939) in paragraph at lines 642--652
-\T1/ptm/m/n/10 lanzó Fast Down-ward so-bre cada vari-ante a través de
- []
-
-
-Underfull \hbox (badness 2856) in paragraph at lines 642--652
-\T1/pcr/m/n/10 unified-planning \T1/ptm/m/n/10 con la re-c-eta de la Prác-tica 
-4
+Underfull \hbox (badness 1708) in paragraph at lines 588--594
+\T1/pcr/m/n/10 unified-planning \T1/ptm/m/n/10 no está disponible, in-cluimos u
+n
  []
 
 [5]
-Underfull \vbox (badness 2310) has occurred while \output is active []
-
-
 
 LaTeX Font Warning: Font shape `T1/ptm/m/scit' undefined
-(Font)              using `T1/ptm/m/it' instead on input line 810.
+(Font)              using `T1/ptm/m/it' instead on input line 768.
 
-[6] [7]
-Underfull \hbox (badness 3872) in paragraph at lines 1085--1092
+[6]
+Underfull \vbox (badness 1097) has occurred while \output is active []
+
+ [7]
+Underfull \hbox (badness 3872) in paragraph at lines 1023--1030
 []\T1/ptm/m/n/10 Todo el código, los ficheros PDDL, los note-books
  []
 
 
-Underfull \hbox (badness 2197) in paragraph at lines 1085--1092
+Underfull \hbox (badness 2197) in paragraph at lines 1023--1030
 \T1/ptm/m/n/10 de ex-per-i-mentación y los CSV con los re-sul-ta-dos es-
  []
 
 
-Underfull \hbox (badness 2961) in paragraph at lines 1085--1092
-\T1/ptm/m/n/10 Los ex-per-i-men-tos se re-pro-ducen eje-cu-tando los scripts
- []
-
-[8]
-Underfull \hbox (badness 3058) in paragraph at lines 1114--1117
-[]\T1/ptm/m/n/10 Detectar y solu-cionar el bug de cod-i-fi-cación de
+Underfull \hbox (badness 2547) in paragraph at lines 1023--1030
+\T1/ptm/m/n/10 tán en el di-rec-to-rio \T1/pcr/m/n/10 senku/ \T1/ptm/m/n/10 del
+ en-tre-gable. Para re-
  []
 
 
-Underfull \hbox (badness 1354) in paragraph at lines 1114--1117
-\T1/pcr/m/n/10 up-fast-downward 0.5.2 \T1/ptm/m/n/10 me-di-ante el mó-dulo
+Underfull \hbox (badness 7133) in paragraph at lines 1050--1052
+[]\T1/ptm/m/n/10 Detectar y ar-reglar el bug de cod-i-fi-cación de
+ []
+
+
+Underfull \hbox (badness 10000) in paragraph at lines 1050--1052
+\T1/pcr/m/n/10 up-fast-downward 0.5.2 \T1/ptm/m/n/10 con el mó-dulo
  []
 
 ! Undefined control sequence.
-l.1136 \url
+l.1070 \url
            {https://planning.wiki/}, consultado en mayo de 2026.
 ? 
 
-Underfull \hbox (badness 10000) in paragraph at lines 1135--1137
+Underfull \hbox (badness 10000) in paragraph at lines 1069--1071
 []\T1/ptm/m/n/8 Planning Wiki, ``Plan-ning Do-main Def-i-ni-tion Lan-guage,''
  []
 
 ! Undefined control sequence.
-l.1140 DocumentaciÃ³n: \url
+l.1074 DocumentaciÃ³n: \url
                            {https://unified-planning.readthedocs.io}.
 ? 
 LaTeX Font Info:    Trying to load font information for TS1+ptm on input line 1
-150.
+084.
 (C:\Users\betis\AppData\Local\Programs\MiKTeX\tex/latex/psnfss\ts1ptm.fd
 File: ts1ptm.fd 2001/06/04 font definitions for TS1/ptm.
 )
@@ -619,17 +602,17 @@ Before submitting the final camera ready copy, remember to:
  uses only Type 1 fonts and that every step in the generation
  process uses the appropriate paper size.
 
-[9] (memoria.aux)
+[8] (memoria.aux)
  ***********
 LaTeX2e <2025-11-01>
 L3 programming layer <2025-12-24>
  ***********
  ) 
 Here is how much of TeX's memory you used:
- 6080 strings out of 467871
- 106909 string characters out of 5418376
- 542529 words of memory out of 5000000
- 34839 multiletter control sequences out of 15000+600000
+ 6082 strings out of 467871
+ 106928 string characters out of 5418376
+ 537529 words of memory out of 5000000
+ 34841 multiletter control sequences out of 15000+600000
  754217 words of font info for 162 fonts, out of 8000000 for 9000
  1141 hyphenation exceptions out of 8191
  59i,17n,76p,324b,393s stack positions out of 10000i,1000n,20000p,200000b,200000s
@@ -649,17 +632,16 @@ msy10.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/public/amsf
 onts/cm/cmsy6.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/type1/pub
 lic/amsfonts/cm/cmsy7.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX/fonts/t
 ype1/public/amsfonts/cm/cmsy8.pfb><C:/Users/betis/AppData/Local/Programs/MiKTeX
-/fonts/type1/public/amsfonts/cm/cmsy9.pfb><C:/Users/betis/AppData/Local/Program
-s/MiKTeX/fonts/type1/urw/courier/ucrb8a.pfb><C:/Users/betis/AppData/Local/Progr
-ams/MiKTeX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/betis/AppData/Local/Pro
-grams/MiKTeX/fonts/type1/urw/courier/ucrro8a.pfb><C:/Users/betis/AppData/Local/
-Programs/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/betis/AppData/Local/
-Programs/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/betis/AppData/Local
-/Programs/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/betis/AppData/Local
-/Programs/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
-Output written on memoria.pdf (9 pages, 307393 bytes).
+/fonts/type1/urw/courier/ucrb8a.pfb><C:/Users/betis/AppData/Local/Programs/MiKT
+eX/fonts/type1/urw/courier/ucrr8a.pfb><C:/Users/betis/AppData/Local/Programs/Mi
+KTeX/fonts/type1/urw/courier/ucrro8a.pfb><C:/Users/betis/AppData/Local/Programs
+/MiKTeX/fonts/type1/urw/times/utmb8a.pfb><C:/Users/betis/AppData/Local/Programs
+/MiKTeX/fonts/type1/urw/times/utmbi8a.pfb><C:/Users/betis/AppData/Local/Program
+s/MiKTeX/fonts/type1/urw/times/utmr8a.pfb><C:/Users/betis/AppData/Local/Program
+s/MiKTeX/fonts/type1/urw/times/utmri8a.pfb>
+Output written on memoria.pdf (8 pages, 294141 bytes).
 PDF statistics:
- 143 PDF objects out of 1000 (max. 8388607)
+ 135 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 500000)
  1 words of extra memory for PDF output out of 10000 (max. 10000000)
 

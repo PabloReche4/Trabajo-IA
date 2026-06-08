@@ -1,21 +1,21 @@
-"""Parche del bug de decodificacion UTF-8 en `up-fast-downward 0.5.2`.
+"""Parche para el bug de decodificacion UTF-8 de up-fast-downward 0.5.2.
 
-El paquete `up-fast-downward 0.5.2` (la version instalada al hacer
+up-fast-downward 0.5.2 (la version que sale por defecto al hacer
 `pip install up-fast-downward`) llama internamente a `bytes.decode()`
-sin pasar `errors='replace'`. Cuando la salida estandar o de error de
-Fast Downward contiene caracteres con tildes (frecuente en mensajes en
-espanol), el decode lanza `UnicodeDecodeError` y la llamada al
-planificador se rompe sin devolver el plan ni el estado.
+sin `errors='replace'`. Cuando la salida de Fast Downward incluye
+caracteres con tildes (en Windows pasa con bastante frecuencia), el
+decode lanza UnicodeDecodeError y la llamada se queda colgada sin
+devolver plan ni estado.
 
-Este modulo monkey-patchea `unified_planning.engines.pddl_planner.run_command`
-para que use `errors='replace'`, neutralizando el bug sin afectar a la
-correccion del resultado.
+Aqui monkey-parcheamos `unified_planning.engines.pddl_planner.run_command`
+para que decodifique con `errors='replace'`. Es la solucion minima que
+arregla el bug sin tocar nada mas.
 
 Uso:
 
     from senku.src.parche_fd import aplicar_parche
     aplicar_parche()
-    # ... ahora ya se puede llamar a OneshotPlanner('fast-downward').solve(...)
+    # OneshotPlanner('fast-downward') ya funciona.
 """
 
 from typing import IO, List, Optional, Tuple, Union
@@ -41,9 +41,7 @@ def _run_command_tolerante(
     output_stream: Optional[Union[Tuple[IO[str], IO[str]], IO[str]]] = None,
     timeout: Optional[float] = None,
 ) -> Tuple[bool, Tuple[List[str], List[str]], int]:
-    """Version de `run_command` que decodifica la salida con
-    `errors='replace'`, evitando el UnicodeDecodeError del paquete
-    original."""
+    """run_command que decodifica la salida con errors='replace'."""
     if output_stream is None:
         kwargs = (
             {"creationflags": subprocess.CREATE_NEW_PROCESS_GROUP}  # type: ignore[attr-defined]
@@ -58,7 +56,7 @@ def _run_command_tolerante(
         proc_err: List[str] = []
         try:
             out_err_bytes = engine._process.communicate(timeout=timeout)
-            # FIX: decodificacion tolerante a bytes no validos en UTF-8.
+            # Aqui esta el fix: decode tolerante a bytes no validos.
             proc_out, proc_err = [
                 [x.decode(errors="replace")] for x in out_err_bytes
             ]
@@ -69,8 +67,8 @@ def _run_command_tolerante(
         retval = engine._process.returncode if engine._process else 0
         return timeout_occurred, (proc_out, proc_err), retval
 
-    # Si se pasa un output_stream, delegamos en la implementacion original
-    # tras recargarla (caso poco habitual en este trabajo).
+    # Si llega un output_stream, delegamos en la implementacion original
+    # (es un caso que no usamos en el trabajo).
     import unified_planning.engines.pddl_planner as pddl_planner
     return pddl_planner.run_command.__wrapped__(  # type: ignore[attr-defined]
         engine, cmd, output_stream=output_stream, timeout=timeout

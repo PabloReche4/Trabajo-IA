@@ -8,14 +8,14 @@ Uso tipico (desde la raiz del proyecto):
         --beta 200 --intentos 5 --relajado
 
 Comandos:
-    resolver  Aplica el algoritmo elegido al par dominio+problema PDDL.
-              Algoritmos disponibles:
-                * beam (por defecto): beam search con la heuristica
-                  pagoda (algoritmo de la convocatoria de junio).
-                * bfs: busqueda en anchura (parte comun).
-                * fd: Fast Downward via unified-planning (linea base).
-    generar   Construye los ficheros .pddl de las cinco variantes
-              definidas en el modulo `tableros`.
+  resolver  Aplica el algoritmo elegido al par dominio+problema PDDL.
+            Algoritmos:
+              - beam (por defecto): beam search guiado por pagoda
+                (la ampliacion de junio).
+              - beam-iter: beam search iterativo (anchura creciente).
+              - bfs: busqueda en anchura (parte comun).
+              - fd: Fast Downward via unified-planning (linea base).
+  generar   Vuelca los .pddl de las cinco variantes a disco.
 """
 
 import argparse

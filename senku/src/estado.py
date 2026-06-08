@@ -1,10 +1,10 @@
 """Representacion de estados del Senku y motor de transiciones.
 
-Un estado se representa como un frozenset con las coordenadas de las
-casillas ocupadas. El conjunto de casillas posibles y la lista de saltos
-validos se derivan del tablero. Esta representacion es independiente del
-PDDL: usar frozensets permite usar los estados como claves de diccionario
-y comparar la igualdad en tiempo constante (amortizado).
+Un estado es un frozenset con las coordenadas de las casillas ocupadas.
+El conjunto de casillas y la lista de saltos validos se sacan del
+tablero. Usar frozensets nos permite usar los estados como claves de
+diccionario (visitados, padres...) y comparar igualdad en O(1)
+amortizado.
 """
 
 from dataclasses import dataclass, field
@@ -19,21 +19,17 @@ Movimiento = Tuple[Coord, Coord, Coord]  # (desde, sobre, hasta)
 
 @dataclass(frozen=True)
 class ProblemaSenku:
-    """Encapsula un tablero junto a su estado inicial y meta.
+    """Tablero + estado inicial + meta. Es lo que consumen las busquedas.
 
-    Esta clase es la interfaz comun que consumen los algoritmos de
-    busqueda. Se puede construir directamente desde un objeto Tablero o
-    bien desde un par de ficheros PDDL (ver `lector_pddl.py`).
+    Se construye desde un Tablero (`desde_tablero`) o desde un par de
+    ficheros PDDL (ver lector_pddl.py).
 
-    El campo `modo_relajado` permite cambiar el criterio de meta:
-        - False (estricto): el estado meta exige que las casillas en
-          `meta_ocupadas` esten ocupadas y las casillas en `meta_vacias`
-          esten vacias (definicion clasica).
-        - True (relajado): la meta se cumple en cuanto queda una unica
-          pieza en cualquier lugar del tablero. Es la version relajada
-          mencionada en el enunciado y resulta solucionable en mas
-          tableros, ya que evita las obstrucciones de paridad cuando la
-          casilla objetivo coincide con el hueco inicial.
+    modo_relajado:
+      - False (estricto): hay que dejar las casillas en `meta_ocupadas`
+        ocupadas y las de `meta_vacias` vacias. Es la meta clasica.
+      - True (relajado): basta con que quede una unica pieza en
+        cualquier sitio del tablero. Es la version del enunciado tras
+        la aclaracion del profesor.
     """
 
     tablero: Tablero
@@ -74,10 +70,9 @@ class ProblemaSenku:
 def reconstruye_camino(
     padres: dict, estado_final: Estado
 ) -> Tuple[List[Estado], List[Movimiento]]:
-    """Reconstruye la secuencia de estados y movimientos desde el padre
-    hasta el estado final usando el diccionario `padres`.
+    """Recompone la secuencia de estados y movimientos hacia atras.
 
-    `padres[estado]` debe ser (movimiento, estado_padre) o None para el
+    `padres[estado]` es (movimiento, estado_padre), o None para el
     estado inicial.
     """
     estados: List[Estado] = [estado_final]

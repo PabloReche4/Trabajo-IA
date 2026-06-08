@@ -1,30 +1,21 @@
 """Heuristicas para guiar la busqueda sobre estados de Senku.
 
-La heuristica principal del trabajo es la **funcion pagoda**. Se asigna
-a cada casilla un valor entero de manera que para tres casillas
-consecutivas y alineadas a, b, c se cumpla a + b >= c. Bajo esa
-condicion, el valor pagoda de un estado (suma de los valores de sus
-casillas ocupadas) es no creciente con cada movimiento legal: cada salto
-elimina dos piezas (en `desde` y `sobre`) y crea una en `hasta`, asi que
-la variacion de pagoda es `valor(hasta) - valor(desde) - valor(sobre)`,
-que por la propiedad anterior es <= 0.
+La heuristica principal del trabajo es la *funcion pagoda*: se asigna a
+cada casilla un peso entero de forma que, para toda terna (a, b, c) de
+casillas consecutivas y alineadas, se cumpla a + b >= c. Bajo esa
+condicion, el valor pagoda de un estado (suma de pesos de sus piezas)
+es no creciente con cada salto legal.
 
-Eso convierte a la pagoda en una herramienta para detectar estados
-"sin salida" (cuando su pagoda no alcanza la meta) y, sobre todo, como
-heuristica admisible: cuanto mayor sea el exceso de pagoda sobre la
-pagoda objetivo, mas piezas "improductivas" hay que eliminar.
+Aparte de la pagoda, aqui hay tres heuristicas no admisibles pero utiles
+como senal de busqueda en beam search:
 
-Adicionalmente se proporcionan dos heuristicas no admisibles pero utiles
-como senales de busqueda en algoritmos incompletos como beam search:
+  - heuristica_aislamiento: penaliza piezas sin movimiento posible.
+  - heuristica_compacidad: premia estados con piezas cerca de la meta.
+  - heuristica_conectividad: ordena por numero de componentes conexas
+    (es la que acaba resolviendo la cruz inglesa).
 
-    - `heuristica_aislamiento`: penaliza estados con piezas que no
-      pueden participar en ningun movimiento (callejones sin salida).
-    - `heuristica_compacidad`: premia los estados donde las piezas
-      restantes estan cerca de la posicion meta.
-
-La funcion `heuristica_compuesta` combina pagoda con las dos anteriores;
-es la heuristica recomendada cuando se quiere maximizar la probabilidad
-de exito del beam search a costa de perder la cota admisible.
+heuristica_compuesta combina pagoda + aislamiento + compacidad; sirve
+cuando se prefiere cobertura empirica a admisibilidad estricta.
 """
 
 from typing import Callable, Dict, Iterable, Tuple
@@ -39,9 +30,7 @@ PesosPagoda = Dict[Coord, int]
 def pagoda_uniforme(tablero: Tablero) -> PesosPagoda:
     """Asignacion trivial: todas las casillas valen 1.
 
-    Cumple a + b >= c (1 + 1 >= 1). El valor pagoda coincide con el
-    numero de piezas en el tablero, asi que se comporta como una
-    heuristica que solo mide cuantas piezas faltan por eliminar.
+    Cumple a + b >= c y el valor pagoda coincide con el numero de piezas.
     """
     return {c: 1 for c in tablero.casillas}
 
@@ -49,15 +38,10 @@ def pagoda_uniforme(tablero: Tablero) -> PesosPagoda:
 def pagoda_clasica(tablero: Tablero) -> PesosPagoda:
     """Asignacion clasica basada en la distancia de Chebyshev al centro.
 
-    Para cada casilla se asigna peso `max(1, 8 - d)` donde `d` es la
-    distancia de Chebyshev al baricentro del tablero. Las casillas
-    centrales valen 8 (el maximo) y las del borde se reducen hasta 1.
-
-    La condicion a + b >= c se cumple porque, en cualquier terna
-    alineada y consecutiva, los pesos extremos suman al menos el peso
-    intermedio (la diferencia de distancia de Chebyshev entre celdas
-    contiguas es a lo sumo 1, por lo que sus pesos difieren en a lo
-    sumo 1; en el peor caso a = 7, b = 8, c = 7, y 7 + 8 >= 7).
+    Cada casilla recibe peso max(1, 8 - d) con d = distancia de Chebyshev
+    al baricentro. El centro vale 8 y se va degradando hacia el borde
+    hasta 1. La condicion a + b >= c se cumple porque pesos contiguos
+    difieren en a lo sumo 1 (peor caso: 7 + 8 >= 7).
     """
     if not tablero.casillas:
         return {}
@@ -80,19 +64,11 @@ def valor_pagoda(estado: Estado, pesos: PesosPagoda) -> int:
 def heuristica_pagoda(
     problema: ProblemaSenku, pesos: PesosPagoda
 ) -> Callable[[Estado], float]:
-    """Construye una heuristica h(estado) basada en la diferencia entre
-    la pagoda del estado y la pagoda objetivo.
+    """h(estado) = max(0, pagoda(estado) - pagoda_meta).
 
-    La pagoda objetivo es la suma de los pesos de las casillas que deben
-    estar ocupadas en la meta. Cuanto mas pagoda excedente tenga un
-    estado, mas piezas innecesarias hay que eliminar para llegar a la
-    meta, asi que la heuristica devuelve `max(0, pagoda(estado) - pagoda_meta)`.
-    Si la pagoda es estrictamente menor que la objetivo el estado es
-    infactible (no podra alcanzarse meta) y la heuristica devuelve inf.
-
-    En modo relajado (cualquier pieza vale), la pagoda objetivo se toma
-    como el peso minimo de cualquier casilla, lo que mantiene la
-    admisibilidad.
+    Si la pagoda cae por debajo de la objetivo, el estado es infactible:
+    devolvemos inf para que beam search lo descarte. En modo relajado la
+    pagoda objetivo es el peso minimo del tablero (mantiene admisibilidad).
     """
     if problema.modo_relajado:
         pagoda_meta = min(pesos.values()) if pesos else 0
@@ -109,12 +85,11 @@ def heuristica_pagoda(
 
 
 def _piezas_aisladas(estado: Estado, problema: ProblemaSenku) -> int:
-    """Cuenta cuantas piezas del estado no pueden participar en ningun
-    movimiento (ni como `desde`, ni como `sobre`, ni como `hasta`).
+    """Cuenta piezas que no pueden participar en ningun movimiento.
 
-    Una pieza aislada nunca podra ser eliminada ni desplazada, lo que
-    impide alcanzar estados con menos piezas que las "no aisladas".
-    Es una senal fuerte de callejon sin salida."""
+    Una pieza es "movible" si aparece como desde o sobre de algun salto
+    cuyo destino esta vacio. Las que no lo son nunca podran eliminarse:
+    son una senal fuerte de callejon sin salida."""
     movibles = set()
     for desde, sobre, hasta in problema.saltos:
         if desde in estado and sobre in estado and hasta not in estado:
@@ -133,17 +108,12 @@ def heuristica_aislamiento(problema: ProblemaSenku) -> Callable[[Estado], int]:
 
 
 def _componentes_conexas(estado: Estado) -> int:
-    """Cuenta las componentes conexas del estado considerando adyacencia
-    ortogonal (arriba, abajo, izquierda, derecha) entre casillas
-    ocupadas.
+    """Componentes conexas de las piezas por adyacencia ortogonal.
 
-    En el Senku, para reducir el tablero a una unica pieza es necesario
-    que, a grandes rasgos, las piezas permanezcan "juntas": dos piezas
-    separadas por huecos que no pueden cerrarse nunca podran fusionarse.
-    Cada componente conexa adicional es, por tanto, un grupo que muy
-    probablemente quede aislado al final. Minimizar el numero de
-    componentes resulta ser una senal de busqueda mucho mas informativa
-    que la pagoda para este problema."""
+    Para llegar a 1 pieza hay que mantener el conjunto cohesionado: dos
+    grupos separados por huecos no recuperables ya no se podran juntar.
+    Cada componente extra es, en la practica, un grupo que se quedara
+    atras."""
     restantes = set(estado)
     componentes = 0
     while restantes:
@@ -169,23 +139,16 @@ def heuristica_conectividad(
 ) -> Callable[[Estado], float]:
     """Heuristica basada en la conectividad del tablero.
 
-    Combina cuatro terminos, en orden de importancia:
-        1. numero de componentes conexas (dominante): cada componente
-           extra es un grupo que tendera a quedar aislado;
-        2. numero de piezas aisladas (sin movimiento posible);
-        3. numero total de piezas (criterio de desempate fino);
-        4. atraccion hacia la meta: solo en modo estricto y cuando
-           quedan pocas piezas (<= `umbral_meta`), se anade la suma de
-           distancias Manhattan a la casilla meta, para que el final de
-           la partida se dirija a la posicion objetivo.
+    Combina cuatro terminos por orden de importancia:
+      1. componentes conexas (peso dominante);
+      2. piezas aisladas (sin movimiento posible);
+      3. numero total de piezas (desempate fino);
+      4. solo en modo estricto y cuando quedan pocas piezas
+         (<= umbral_meta), atraccion Manhattan a la casilla objetivo.
 
-    Esta heuristica es la que permite a beam search resolver tableros
-    grandes como la cruz inglesa, donde la pagoda por si sola fracasa.
-    No es admisible, pero su poder discriminativo es muy superior. El
-    termino de conectividad codifica la intuicion de que, para terminar
-    con una sola pieza, el conjunto de piezas debe mantenerse cohesionado
-    durante toda la partida."""
-    # Centroide de la meta (solo se usa en modo estricto).
+    No es admisible, pero es la unica con la que beam search resuelve
+    la cruz inglesa."""
+    # El centroide solo nos sirve en modo estricto (cuando hay meta posicional).
     if problema.meta_ocupadas:
         objetivo = next(iter(problema.meta_ocupadas))
     else:
@@ -211,12 +174,11 @@ def heuristica_conectividad(
 
 
 def heuristica_compacidad(problema: ProblemaSenku) -> Callable[[Estado], float]:
-    """Heuristica basada en la distancia agregada al centro de la meta.
+    """Suma de distancias Chebyshev de las piezas al centroide de la meta.
 
-    Para cada pieza se calcula su distancia de Chebyshev al centroide
-    de las casillas meta (o al baricentro del tablero si la meta no
-    define posiciones concretas). Estados con piezas concentradas cerca
-    del centro reciben valores pequenos."""
+    Si la meta no define posiciones concretas, usamos el baricentro del
+    tablero. Cuanto mas concentradas esten las piezas cerca del centro,
+    menor valor recibe el estado."""
     if problema.meta_ocupadas:
         celdas_ref = problema.meta_ocupadas
     else:
@@ -239,16 +201,15 @@ def heuristica_compuesta(
     w_aislamiento: float = 1000.0,
     w_compacidad: float = 0.1,
 ) -> Callable[[Estado], float]:
-    """Combina pagoda, aislamiento y compacidad en una unica heuristica.
+    """Pagoda + aislamiento + compacidad en una unica heuristica.
 
-    La intuicion es:
-        - la pagoda asegura monotonia y admisibilidad;
-        - el aislamiento penaliza con fuerza estados "muertos";
-        - la compacidad introduce una senal direccional hacia la meta.
+    - pagoda: aporta monotonia y admisibilidad (en su componente);
+    - aislamiento: penaliza con fuerza estados "muertos";
+    - compacidad: senal direccional hacia la meta.
 
-    Los pesos por defecto se han ajustado para que el aislamiento domine
-    la decision (es la principal causa de fracaso en beam search) y
-    despues actuen pagoda y compacidad como criterios de afinado."""
+    Los pesos por defecto hacen que el aislamiento domine la decision
+    (es la principal causa de fracaso del beam) y dejan pagoda y
+    compacidad como criterios de afinado."""
     h_pag = heuristica_pagoda(problema, pesos)
     h_ais = heuristica_aislamiento(problema)
     h_com = heuristica_compacidad(problema)

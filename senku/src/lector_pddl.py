@@ -1,24 +1,22 @@
-"""Lectura de un par (dominio.pddl, problema.pddl) y conversion a la
-representacion interna `ProblemaSenku`.
+"""Lectura de un par (dominio.pddl, problema.pddl) y conversion a
+ProblemaSenku.
 
-El requisito de la convocatoria de junio es que el sistema acepte dos
-ficheros PDDL arbitrarios. Para ello se usa la biblioteca recomendada
-en la asignatura, `unified_planning`, exactamente con la misma
-metodologia mostrada en la Practica 4:
+La convocatoria de junio pide que el sistema acepte dos ficheros PDDL
+arbitrarios. Usamos la biblioteca de la asignatura, unified_planning,
+con el mismo patron de la Practica 4:
 
     from unified_planning.io import PDDLReader
     lector = PDDLReader()
     problema_up = lector.parse_problem(dominio_pddl, problema_pddl)
 
-Despues se recorren los hechos del estado inicial y la meta del objeto
-devuelto por la biblioteca para construir nuestro `ProblemaSenku`, que
-es lo que consumen los algoritmos de busqueda.
+A partir del objeto que devuelve la biblioteca leemos los hechos del
+estado inicial y de la meta para construir nuestro ProblemaSenku, que
+es lo que entienden los algoritmos de busqueda.
 
-Como red de seguridad se incluye un parser propio
-(`carga_con_parser_ligero`) que solo entiende el dominio Senku. Se usa
-unicamente si `unified_planning` no esta instalado en el entorno, lo
-que no deberia ocurrir en la entrega (la asignatura usa esta biblioteca
-en la Practica 4).
+Como red de seguridad incluimos `carga_con_parser_ligero`, un parser
+S-expression propio que solo entiende el dominio Senku. Solo se usa
+si unified_planning no esta instalado (en la entrega no deberia pasar:
+la asignatura ya la usa en la Practica 4).
 """
 
 from pathlib import Path
@@ -32,9 +30,8 @@ from .tableros import Coord, Tablero
 def _parse_coord(nombre: str) -> Coord:
     """Convierte un identificador PDDL `p_R_C` en una coordenada (R, C).
 
-    Se acepta indistintamente mayusculas y minusculas porque
-    `unified_planning` normaliza los identificadores a minusculas al
-    parsear el fichero PDDL."""
+    Toleramos mayusculas/minusculas porque unified_planning normaliza
+    los identificadores a minusculas al parsear."""
     partes = nombre.split("_")
     if len(partes) != 3 or partes[0].lower() != "p":
         raise ValueError(
@@ -51,15 +48,14 @@ def _parse_coord(nombre: str) -> Coord:
 def carga_con_unified_planning(
     ruta_dominio: Path, ruta_problema: Path
 ) -> ProblemaSenku:
-    """Carga un par dominio + problema PDDL usando `unified_planning`.
+    """Carga un par dominio + problema PDDL con unified_planning.
 
-    La biblioteca se encarga de validar la sintaxis PDDL y devuelve un
-    objeto `Problem` del que extraemos:
-        - los objetos -> casillas del tablero;
-        - los hechos `ocupada`, `vacia` del :init -> estado inicial;
-        - los hechos `salto` del :init -> lista de movimientos posibles;
-        - los hechos del :goal (con sus negaciones) -> casillas que
-          deben quedar ocupadas o vacias en la meta.
+    La biblioteca valida la sintaxis y devuelve un Problem, del que
+    extraemos:
+      - objetos -> casillas del tablero;
+      - hechos ocupada/vacia del :init -> estado inicial;
+      - hechos salto del :init -> lista de movimientos posibles;
+      - hechos del :goal (y sus negaciones) -> meta_ocupadas y meta_vacias.
     """
     from unified_planning.io import PDDLReader
 
@@ -86,7 +82,7 @@ def carga_con_unified_planning(
     meta_ocupadas: Set[Coord] = set()
     meta_vacias: Set[Coord] = set()
     for goal in problema_up.goals:
-        # `goal` puede ser un AND de hechos o un hecho aislado.
+        # goal puede ser un AND de hechos o un hecho suelto.
         hechos = list(goal.args) if goal.is_and() else [goal]
         for hecho in hechos:
             negado = hecho.is_not()

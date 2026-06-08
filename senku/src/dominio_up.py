@@ -1,23 +1,15 @@
-"""Construccion del dominio y los problemas del Senku usando la API
-Python de unified-planning (estilo Practica 4).
+"""Dominio y problemas del Senku con la API Python de unified-planning.
 
-En la Practica 4 se mostraron dos formas de definir un problema de
-planificacion:
+En la Practica 4 se vieron dos formas de definir un problema:
+  (a) leer ficheros PDDL con PDDLReader.parse_problem;
+  (b) construirlo en codigo con Problem, Fluent, UserType e
+      InstantaneousAction (y volcarlo a PDDL con PDDLWriter).
 
-    a) Leer un par de ficheros PDDL con `PDDLReader.parse_problem`.
-    b) Construir el problema en codigo Python con `Problem`, `Fluent`,
-       `UserType` e `InstantaneousAction` y serializarlo con
-       `PDDLWriter`.
+Aqui implementamos (b). La ventaja frente a escribir el PDDL a mano es
+que tenemos validacion sintactica al construirlo y podemos pasarselo
+directamente a Fast Downward (via OneshotPlanner) sin pasar por fichero.
 
-Este modulo implementa (b) para el dominio Senku. La ventaja frente a
-escribir el PDDL a mano es que se obtiene validacion sintactica
-inmediata, soporte para escribir el .pddl resultante y la posibilidad de
-pasarselo directamente a un planificador como Fast Downward a traves de
-`OneshotPlanner`.
-
-La funcion `construye_problema_up(tablero)` devuelve un objeto
-`unified_planning.model.Problem` listo para resolver con Fast Downward
-o cualquier otro planificador soportado por la biblioteca.
+construye_problema_up(tablero) devuelve un Problem listo para resolver.
 """
 
 from typing import TYPE_CHECKING
@@ -39,17 +31,18 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def construye_dominio_up() -> "ProblemUP":
-    """Crea un objeto Problem con la definicion del dominio Senku
-    (predicados y esquema de accion) pero sin objetos, estado inicial
-    ni meta. Es el equivalente al fichero PDDL de dominio."""
+    """Devuelve un Problem con el dominio Senku (predicados + accion).
+
+    No incluye objetos, estado inicial ni meta: es el equivalente al
+    fichero PDDL de dominio, solo la parte comun."""
     dominio = Problem("dominio_senku")
 
-    # Tipos de objetos: una unica clase para las casillas.
+    # Un solo tipo de objeto: Casilla.
     Casilla = UserType("Casilla")
     dominio.user_types.append(Casilla)
 
-    # Predicados: ocupada, vacia y salto (este ultimo describe la
-    # geometria como hechos del estado inicial).
+    # ocupada/vacia: estado dinamico de cada casilla.
+    # salto: codifica la geometria como hechos estaticos del :init.
     ocupada = Fluent("ocupada", BoolType(), c=Casilla)
     vacia = Fluent("vacia", BoolType(), c=Casilla)
     salto = Fluent(
@@ -58,7 +51,7 @@ def construye_dominio_up() -> "ProblemUP":
     for fluente in (ocupada, vacia, salto):
         dominio.add_fluent(fluente, default_initial_value=False)
 
-    # Accion `mover`: misma estructura que en la version PDDL.
+    # Accion `mover`: la misma del PDDL hecho a mano.
     mover = InstantaneousAction("mover", desde=Casilla, sobre=Casilla, hasta=Casilla)
     desde = mover.desde
     sobre = mover.sobre
@@ -81,9 +74,10 @@ def construye_dominio_up() -> "ProblemUP":
 
 
 def construye_problema_up(tablero: Tablero) -> "ProblemUP":
-    """Devuelve un objeto Problem completamente especificado a partir de
-    la definicion interna del tablero. Util para invocar Fast Downward
-    sin pasar por un fichero PDDL intermedio."""
+    """Problem completo (dominio + objetos + init + meta) para un Tablero.
+
+    Lo usamos para lanzar Fast Downward directamente sin escribir el
+    PDDL a un fichero."""
     problema = construye_dominio_up().clone()
     problema.name = tablero.nombre
 

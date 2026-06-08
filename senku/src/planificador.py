@@ -1,19 +1,17 @@
-"""Resolucion mediante planificadores externos via unified-planning.
+"""Resolucion con planificadores externos a traves de unified-planning.
 
-Este modulo proporciona una funcion `resuelve_con_fast_downward` que
-toma un objeto `Problem` de unified-planning y devuelve el plan
-encontrado por Fast Downward (si lo hay). Se usa como linea base para
-contrastar la calidad de los planes que produce nuestro beam search.
+`resuelve_con_fast_downward` recibe un Problem de unified-planning y
+devuelve el plan que encuentra Fast Downward (si lo hay). Es nuestra
+linea de base contra la que comparar el beam search.
 
-Sigue exactamente el patron mostrado en la Practica 4:
+Sigue el patron de la Practica 4:
 
     from unified_planning.shortcuts import OneshotPlanner
     planificador = OneshotPlanner(name='fast-downward')
     resultado = planificador.solve(problema)
 
-El tipo de problema generado por nuestro modulo `dominio_up.py` es
-compatible con Fast Downward (planificacion clasica STRIPS con
-tipos), tal y como se comprueba en la propia Practica 4.
+El Problem que produce dominio_up.py es STRIPS con tipos, asi que es
+compatible con Fast Downward sin mas (como se vio en la Practica 4).
 """
 
 from dataclasses import dataclass, field
@@ -24,13 +22,12 @@ from unified_planning.shortcuts import OneshotPlanner, get_environment
 
 from .parche_fd import aplicar_parche
 
-# Aplica el parche que neutraliza el UnicodeDecodeError de
-# up-fast-downward 0.5.2 al decodificar la salida de FD en Windows.
+# Aplicamos el parche del UnicodeDecodeError de up-fast-downward 0.5.2
+# (lo necesitamos en Windows; en Linux no hace dano).
 aplicar_parche()
 
-# Por defecto desactivamos la cabecera de creditos que imprime la
-# biblioteca cada vez que se construye un planificador; en la Practica 4
-# se sugiere expresamente esta linea.
+# Silenciamos los creditos que imprime la biblioteca al construir un
+# planificador. Es lo que se sugiere en la Practica 4.
 get_environment().credits_stream = None
 
 
@@ -56,15 +53,13 @@ def resuelve_con_fast_downward(
     problema_up,
     busqueda: Optional[str] = None,
 ) -> ResultadoPlanificador:
-    """Invoca Fast Downward via unified-planning.
+    """Lanza Fast Downward sobre el Problem via unified-planning.
 
-    Parametros:
-        problema_up: instancia de `unified_planning.model.Problem`.
-        busqueda: cadena con la configuracion de busqueda. Si es None,
-            se usa la busqueda por defecto del planificador (que en la
-            version actual de Fast Downward es la lazy-greedy con FF).
-            Para utilizar A* con la heuristica h^max se pasaria
-            'astar(hmax())'; con h^add: 'astar(add())'.
+    problema_up: instancia de unified_planning.model.Problem.
+    busqueda: configuracion de busqueda como cadena. Si es None se usa
+        la busqueda por defecto del planificador (en la version actual
+        de FD, lazy-greedy con FF). Ejemplos: 'astar(hmax())',
+        'astar(add())'.
     """
     inicio = time.perf_counter()
     parametros = {}

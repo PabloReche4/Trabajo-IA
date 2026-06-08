@@ -1,20 +1,19 @@
 """Generacion de ficheros .pddl de problemas de Senku.
 
-Ofrece dos caminos coordinados con la Practica 4:
+Hay dos caminos, alineados con la Practica 4:
 
-    1. `escribe_problema(tablero, destino)`: escritura manual del
-       fichero de problema que referencia un dominio compartido
-       `senku` (el que se encuentra en `senku/pddl/dominio_senku.pddl`).
-       Es el formato que mantiene la asignatura: un unico dominio para
-       todas las variantes. Es el camino por defecto.
+  1. escribe_problema(tablero, destino): escribimos el .pddl del
+     problema a mano, referenciando el dominio compartido `senku` que
+     vive en senku/pddl/dominio_senku.pddl. Es el formato que mantiene
+     la asignatura: un solo dominio para todas las variantes. Camino
+     por defecto.
 
-    2. `escribe_dominio_y_problema_con_writer(tablero, dom, prob)`:
-       construye el problema con la API Python de unified-planning
-       (modulo `dominio_up`) y lo serializa con `PDDLWriter`, igual que
-       en la Practica 4. Produce un dominio + problema autocontenidos
-       (cada par tiene su propio dominio con nombre derivado del
-       problema). Util si se quiere demostrar el flujo de la libreria
-       o pasarle el resultado directamente a Fast Downward.
+  2. escribe_dominio_y_problema_con_writer(tablero, dom, prob):
+     construye el Problem con la API Python de unified-planning (en
+     dominio_up.py) y lo serializa con PDDLWriter, igual que en la
+     Practica 4. Devuelve un dominio + problema autocontenidos. Util
+     si se quiere ensenar el flujo de la biblioteca o pasarle el
+     resultado directamente a Fast Downward.
 """
 
 from pathlib import Path
@@ -33,11 +32,10 @@ def _bloque(predicados: Iterable[str], sangria: str = "    ") -> str:
 
 
 def problema_a_pddl(tablero: Tablero) -> str:
-    """Devuelve la representacion PDDL del problema asociado al tablero.
+    """PDDL del problema (no del dominio) asociado al tablero.
 
-    El problema referencia el dominio `senku` (el de
-    `dominio_senku.pddl`), por lo que mantenemos un unico dominio para
-    todas las variantes."""
+    Apunta al dominio compartido `senku` (dominio_senku.pddl), de modo
+    que todas las variantes comparten dominio."""
     objetos = sorted(nombre_casilla(c) for c in tablero.casillas)
     ocupadas = [
         f"(ocupada {nombre_casilla(c)})" for c in sorted(tablero.inicial_ocupadas)

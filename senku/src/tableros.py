@@ -1,24 +1,20 @@
 """Definicion de los tableros del Senku.
 
-Cada tablero es un conjunto de coordenadas (fila, columna) que indican
-las casillas existentes. Sobre esas casillas se define el estado inicial
-(piezas y hueco) y la meta a alcanzar.
+Cada tablero es un conjunto de coordenadas (fila, columna) con las
+casillas que existen, mas el estado inicial (piezas y hueco) y la meta.
 
-La propuesta de trabajo (Figura 3) muestra cinco variantes del Senku.
-Como las imagenes no especifican coordenadas exactas, en este modulo se
-implementa una interpretacion razonada y documentada de cada una. La
-codificacion permite reproducirlas trivialmente y ampliar el conjunto
-con nuevas variantes si se desea.
+Las cinco variantes salen de la Figura 3 del enunciado. Como la figura
+no fija coordenadas exactas, aqui codificamos cada una con la
+interpretacion que mejor encaja con el dibujo.
 
-Variantes implementadas:
-    1. Cruz inglesa estandar (33 posiciones)
-    2. Tablero cuadrado 5x5 (25 posiciones)
-    3. Tablero octogonal europeo (37 posiciones)
-    4. Tablero diamante de Manhattan-3 (25 posiciones)
-    5. Cruz extendida (45 posiciones)
+  1. Octogono (37 casillas)               -- OBLIGATORIA
+  2. Cruz griega grande (45 casillas)
+  3. Cruz asimetrica (39 casillas)        -- OBLIGATORIA
+  4. Cruz griega clasica / cruz inglesa (33 casillas)
+  5. Rombo / diamante (41 casillas)       -- OBLIGATORIA
 
-Para la convocatoria de junio se exige resolver al menos las variantes
-1, 3 y 5 (las restantes se incluyen como soporte para experimentacion).
+Las variantes 1, 3 y 5 son las que pide la convocatoria de junio; la 2
+y la 4 las usamos para experimentacion adicional.
 """
 
 from dataclasses import dataclass
@@ -32,13 +28,10 @@ Coord = Tuple[int, int]
 class Tablero:
     """Descripcion completa de un tablero de Senku.
 
-    Atributos:
-        nombre: identificador legible del tablero.
-        casillas: coordenadas (fila, columna) presentes en el tablero.
-        inicial_ocupadas: casillas con pieza al inicio.
-        inicial_vacias: casillas vacias al inicio (huecos).
-        meta_ocupadas: casillas que deben tener pieza en el estado meta.
-        meta_vacias: casillas que deben estar vacias en el estado meta.
+    - nombre: identificador legible.
+    - casillas: coordenadas (fila, columna) que existen en el tablero.
+    - inicial_ocupadas / inicial_vacias: estado inicial.
+    - meta_ocupadas / meta_vacias: estado objetivo.
     """
 
     nombre: str
@@ -49,8 +42,7 @@ class Tablero:
     meta_vacias: FrozenSet[Coord]
 
     def saltos(self):
-        """Genera todas las ternas (desde, sobre, hasta) consecutivas
-        alineadas vertical u horizontalmente dentro del tablero."""
+        """Ternas (desde, sobre, hasta) consecutivas alineadas (4 direcciones)."""
         for r, c in self.casillas:
             for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                 sobre = (r + dr, c + dc)
@@ -60,8 +52,7 @@ class Tablero:
 
 
 def _tablero(nombre: str, casillas: Set[Coord], hueco: Coord, objetivo: Coord) -> Tablero:
-    """Constructor auxiliar: define un tablero con un unico hueco inicial
-    y exigencia de terminar con una unica pieza en la posicion `objetivo`."""
+    """Construye un tablero con un solo hueco inicial y meta posicional."""
     casillas_fz = frozenset(casillas)
     inicial_ocupadas = casillas_fz - {hueco}
     meta_ocupadas = frozenset({objetivo})
@@ -234,26 +225,25 @@ TABLEROS: Dict[int, Tablero] = {
 }
 
 
-# Las variantes obligatorias para la convocatoria de junio (1, 3 y 5)
+# Variantes que pide la convocatoria de junio.
 VARIANTES_OBLIGATORIAS = (1, 3, 5)
 
 
 def obtener_tablero(numero: int) -> Tablero:
-    """Devuelve la variante de tablero indicada (1 a 5)."""
+    """Devuelve la variante 1..5."""
     if numero not in TABLEROS:
         raise ValueError(f"Variante {numero} no definida. Usa 1..5.")
     return TABLEROS[numero]
 
 
 def nombre_casilla(coord: Coord) -> str:
-    """Genera el identificador PDDL de una casilla a partir de su coordenada."""
+    """Identificador PDDL de una casilla, p.ej. (2,3) -> p_2_3."""
     r, c = coord
     return f"p_{r}_{c}"
 
 
 def dibuja_tablero(tablero: Tablero, ocupadas: FrozenSet[Coord]) -> str:
-    """Devuelve una representacion textual del tablero, marcando las
-    casillas ocupadas con un punto y las vacias con un circulo."""
+    """Imprime el tablero: 'o' = ocupada, '.' = hueco, ' ' = no existe."""
     if not tablero.casillas:
         return ""
     filas = {r for r, _ in tablero.casillas}
