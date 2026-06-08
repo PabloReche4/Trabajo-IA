@@ -1,11 +1,4 @@
-"""Resuelve cada variante del Senku con Fast Downward via unified-planning.
-
-Se utiliza un proceso hijo por variante con timeout para evitar que la
-ejecucion completa se bloquee si una variante concreta es muy costosa.
-
-Los resultados se imprimen por consola y se guardan en
-`senku/resultados/fast_downward.csv`.
-"""
+"""Fast Downward sobre cada variante via unified-planning."""
 
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as PFTimeout
 from pathlib import Path
@@ -15,7 +8,6 @@ import time
 
 
 def _resuelve(variante: int):
-    """Funcion ejecutada en un proceso aparte: carga el PDDL y lanza FD."""
     from unified_planning.io import PDDLReader
     from unified_planning.shortcuts import OneshotPlanner, get_environment
     get_environment().credits_stream = None
@@ -55,7 +47,6 @@ def main(timeout_s: float = 120.0):
                     "movimientos": 0,
                     "tiempo_s": timeout_s,
                 }
-                # Cancelacion limpia del proceso hijo
                 for proc in exe._processes.values():
                     proc.terminate()
         print(

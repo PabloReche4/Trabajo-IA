@@ -1,7 +1,4 @@
-"""Lanza Fast Downward sobre una sola variante (con timeout por subproceso).
-
-Util para investigar variantes que crashean en el script global.
-"""
+"""Fast Downward sobre una variante con timeout por subproceso."""
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as PFTimeout
 from pathlib import Path
 import csv

@@ -1,17 +1,9 @@
-"""Lanzador de tests sin dependencias.
-
-Ejecuta todas las funciones `test_*` de `test_basico.py` y muestra un
-resumen. Util cuando no se tiene instalado pytest.
-
-Uso (desde la raiz del proyecto):
-    python senku/tests/run_tests.py
-"""
+"""Lanzador de tests sin pytest."""
 
 import sys
 import traceback
 from pathlib import Path
 
-# Permite ejecutarlo desde cualquier sitio anadiendo la raiz al path
 RAIZ = Path(__file__).resolve().parents[2]
 if str(RAIZ) not in sys.path:
     sys.path.insert(0, str(RAIZ))

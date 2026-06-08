@@ -1,14 +1,4 @@
-"""Algoritmos de busqueda sobre el espacio de estados del Senku.
-
-  - busqueda_primero_anchura: BFS (parte comun del trabajo).
-  - busqueda_primero_profundidad: DFS con limite, como referencia.
-  - beam_search: ampliacion de junio.
-  - beam_search_con_reinicios: variante con desempate aleatorio.
-  - beam_search_iterativo: anchura creciente.
-
-Todos devuelven un objeto Resultado con el plan (si existe) y las
-estadisticas basicas (nodos, tiempo, parametros, min_piezas...).
-"""
+"""Algoritmos de busqueda."""
 
 from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Set
@@ -21,17 +11,6 @@ from .estado import Estado, Movimiento, ProblemaSenku, reconstruye_camino
 
 @dataclass
 class Resultado:
-    """Resultado homogeneo de cualquiera de las busquedas.
-
-    - exito: True si se alcanzo la meta.
-    - movimientos / estados: plan encontrado (vacio si no hubo exito).
-    - nodos_expandidos, tiempo_segundos: estadisticas.
-    - parametros: metadatos del algoritmo (beta, intentos, etc.).
-    - min_piezas_alcanzadas: el menor numero de piezas que aparecio en
-      algun estado explorado. Sirve para diagnosticar cuanto se quedo
-      cerca cuando no hay exito.
-    """
-
     exito: bool
     movimientos: List[Movimiento] = field(default_factory=list)
     estados: List[Estado] = field(default_factory=list)
@@ -55,10 +34,6 @@ class Resultado:
 def busqueda_primero_anchura(
     problema: ProblemaSenku, limite_nodos: Optional[int] = None
 ) -> Resultado:
-    """BFS clasica: encuentra el plan con menos movimientos posible.
-
-    limite_nodos acota la exploracion: el espacio de estados del Senku
-    es exponencial y BFS sin cota se vuelve inviable rapidamente."""
     inicio = time.perf_counter()
     if problema.es_meta(problema.inicial):
         return Resultado(
@@ -105,10 +80,6 @@ def busqueda_primero_anchura(
 def busqueda_primero_profundidad(
     problema: ProblemaSenku, limite_profundidad: Optional[int] = None
 ) -> Resultado:
-    """DFS iterativa con limite de profundidad.
-
-    No es la herramienta principal del trabajo; se incluye como
-    referencia para comparar contra el beam search."""
     inicio = time.perf_counter()
     pila = [(problema.inicial, [], [problema.inicial])]
     expandidos = 0
@@ -147,21 +118,6 @@ def beam_search(
     usar_visitados: bool = True,
     semilla: Optional[int] = None,
 ) -> Resultado:
-    """Beam Search siguiendo el pseudocodigo del enunciado.
-
-    Esquema:
-      1. Frontera inicial = {estado_0}.
-      2. Por cada estado de la frontera, generamos sus sucesores.
-      3. Si alguno es meta, devolvemos el plan.
-      4. Si no, ordenamos los sucesores por la heuristica y nos
-         quedamos con los `beta` mejores como nueva frontera.
-
-    usar_visitados: si esta activo, mantenemos un set global para no
-    re-explorar estados ya vistos. Apagarlo permite revisitas (a veces
-    util cuando la heuristica empuja la busqueda a callejones).
-    semilla: alimenta el generador aleatorio que desempata estados con
-    la misma heuristica, util para reproducir y para diversificar.
-    """
     inicio = time.perf_counter()
     rng = random.Random(semilla)
     if problema.es_meta(problema.inicial):
@@ -177,7 +133,6 @@ def beam_search(
     frontera: List[Estado] = [problema.inicial]
     expandidos = 0
     iteraciones = 0
-    # Tracking del estado mas cercano a la meta encontrado (con menos piezas).
     min_piezas = len(problema.inicial)
 
     while frontera:
@@ -190,7 +145,6 @@ def beam_search(
             for movimiento, sucesor in problema.sucesores(estado):
                 if usar_visitados and sucesor in visitados:
                     continue
-                # Solo registramos padre la primera vez que vemos el estado
                 if sucesor not in padres:
                     padres[sucesor] = (movimiento, estado)
                 if len(sucesor) < min_piezas:
@@ -215,8 +169,6 @@ def beam_search(
                     visitados.add(sucesor)
                 candidatos.append((heuristica(sucesor), sucesor))
         candidatos = [c for c in candidatos if c[0] != float("inf")]
-        # Anadimos un valor aleatorio como segundo criterio para que
-        # estados con la misma heuristica no se ordenen siempre igual.
         candidatos.sort(key=lambda x: (x[0], rng.random()))
         frontera = [estado for _, estado in candidatos[:beta]]
 
@@ -242,14 +194,6 @@ def beam_search_con_reinicios(
     iteraciones_maximas: Optional[int] = None,
     usar_visitados: bool = True,
 ) -> Resultado:
-    """Repite beam_search con distintas semillas y devuelve el primer
-    intento exitoso (o el ultimo fallido si ninguno acierta).
-
-    Beam search es incompleto: con un desempate determinista puede
-    quedarse siempre en el mismo callejon. Variando la semilla cada
-    intento explora distintas ramas y la probabilidad de exito sube
-    de forma apreciable en problemas con soluciones tan escasas como
-    el Senku."""
     mejor_fallo = None
     inicio_total = time.perf_counter()
     nodos_totales = 0
@@ -289,17 +233,6 @@ def beam_search_iterativo(
     iteraciones_maximas: Optional[int] = None,
     usar_visitados: bool = True,
 ) -> Resultado:
-    """Beam search con anchura creciente.
-
-    Si una anchura no encuentra plan, se reintenta con la siguiente.
-    En la literatura se conoce como iterative widening beam search.
-    Empieza con el beta mas pequeno (rapido) y solo gasta mas
-    presupuesto si hace falta: instancias faciles salen baratas y las
-    dificiles siguen cubiertas.
-
-    betas: lista creciente de anchuras (por defecto [100, 300, 800, 1500]).
-    intentos_por_beta: reinicios estocasticos por cada anchura.
-    """
     if betas is None:
         betas = [100, 300, 800, 1500]
     inicio = time.perf_counter()

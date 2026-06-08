@@ -1,17 +1,4 @@
-"""Experimento completo de beam search con la heuristica de conectividad.
-
-Genera dos CSV:
-  - resultados/beam_conectividad.csv: para cada variante, intenta beam
-    search en modo relajado (1 pieza en cualquier sitio) y, si procede,
-    en modo estricto (1 pieza en el centro), con anchura creciente.
-  - resultados/estudio_huecos.csv: sobre la cruz inglesa, prueba
-    distintas posiciones del hueco inicial y comprueba en cuales beam
-    search consigue terminar con una unica pieza en ese mismo hueco
-    (problema complementario).
-
-Diseñado para ejecutarse de una vez:
-    python senku/scripts/experimento_completo.py
-"""
+"""Beam search + conectividad sobre las 5 variantes y estudio de huecos."""
 
 from pathlib import Path
 import csv
@@ -30,7 +17,6 @@ from senku.src.busqueda import beam_search_con_reinicios  # noqa: E402
 def experimento_variantes():
     print("== Beam search + conectividad sobre las 5 variantes ==\n")
     filas = []
-    # Anchuras crecientes segun tamano del tablero
     config = {
         1: (300, 6), 2: (800, 6), 3: (1500, 6),
         4: (800, 6), 5: (2000, 6),
@@ -38,7 +24,7 @@ def experimento_variantes():
     for var in [1, 2, 3, 4, 5]:
         t = TABLEROS[var]
         beta, intentos = config[var]
-        for modo in [True, False]:  # relajado primero
+        for modo in [True, False]:
             p = ProblemaSenku.desde_tablero(t, modo_relajado=modo)
             h = heuristica_conectividad(p)
             r = beam_search_con_reinicios(
@@ -67,7 +53,6 @@ def experimento_huecos():
     print("== Estudio de la posicion del hueco inicial (cruz inglesa) ==")
     print("   (beam search, modo estricto: terminar en el propio hueco)\n")
     base = TABLEROS[1]
-    # Por simetria de la cruz inglesa, basta un cuadrante representativo.
     candidatas = sorted({c for c in base.casillas if c[0] <= 3 and c[1] <= 3})
     filas = []
     for hueco in candidatas:

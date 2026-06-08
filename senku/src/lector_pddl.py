@@ -1,23 +1,4 @@
-"""Lectura de un par (dominio.pddl, problema.pddl) y conversion a
-ProblemaSenku.
-
-La convocatoria de junio pide que el sistema acepte dos ficheros PDDL
-arbitrarios. Usamos la biblioteca de la asignatura, unified_planning,
-con el mismo patron de la Practica 4:
-
-    from unified_planning.io import PDDLReader
-    lector = PDDLReader()
-    problema_up = lector.parse_problem(dominio_pddl, problema_pddl)
-
-A partir del objeto que devuelve la biblioteca leemos los hechos del
-estado inicial y de la meta para construir nuestro ProblemaSenku, que
-es lo que entienden los algoritmos de busqueda.
-
-Como red de seguridad incluimos `carga_con_parser_ligero`, un parser
-S-expression propio que solo entiende el dominio Senku. Solo se usa
-si unified_planning no esta instalado (en la entrega no deberia pasar:
-la asignatura ya la usa en la Practica 4).
-"""
+"""Lectura de un par (dominio.pddl, problema.pddl) a ProblemaSenku."""
 
 from pathlib import Path
 import re
@@ -28,10 +9,6 @@ from .tableros import Coord, Tablero
 
 
 def _parse_coord(nombre: str) -> Coord:
-    """Convierte un identificador PDDL `p_R_C` en una coordenada (R, C).
-
-    Toleramos mayusculas/minusculas porque unified_planning normaliza
-    los identificadores a minusculas al parsear."""
     partes = nombre.split("_")
     if len(partes) != 3 or partes[0].lower() != "p":
         raise ValueError(
@@ -40,23 +17,9 @@ def _parse_coord(nombre: str) -> Coord:
     return int(partes[1]), int(partes[2])
 
 
-# ---------------------------------------------------------------------------
-# Backend principal: unified_planning (estilo Practica 4)
-# ---------------------------------------------------------------------------
-
-
 def carga_con_unified_planning(
     ruta_dominio: Path, ruta_problema: Path
 ) -> ProblemaSenku:
-    """Carga un par dominio + problema PDDL con unified_planning.
-
-    La biblioteca valida la sintaxis y devuelve un Problem, del que
-    extraemos:
-      - objetos -> casillas del tablero;
-      - hechos ocupada/vacia del :init -> estado inicial;
-      - hechos salto del :init -> lista de movimientos posibles;
-      - hechos del :goal (y sus negaciones) -> meta_ocupadas y meta_vacias.
-    """
     from unified_planning.io import PDDLReader
 
     lector = PDDLReader()
@@ -82,7 +45,6 @@ def carga_con_unified_planning(
     meta_ocupadas: Set[Coord] = set()
     meta_vacias: Set[Coord] = set()
     for goal in problema_up.goals:
-        # goal puede ser un AND de hechos o un hecho suelto.
         hechos = list(goal.args) if goal.is_and() else [goal]
         for hecho in hechos:
             negado = hecho.is_not()
@@ -110,11 +72,6 @@ def carga_con_unified_planning(
         meta_vacias=frozenset(meta_vacias),
         saltos=tuple(saltos),
     )
-
-
-# ---------------------------------------------------------------------------
-# Fallback: parser propio (sin dependencias)
-# ---------------------------------------------------------------------------
 
 
 _RE_TOKEN = re.compile(r"\(|\)|[^\s\(\)]+")
@@ -223,22 +180,11 @@ def carga_con_parser_ligero(
     )
 
 
-# ---------------------------------------------------------------------------
-# Selector automatico
-# ---------------------------------------------------------------------------
-
-
 def carga_problema_pddl(
     ruta_dominio: Path,
     ruta_problema: Path,
     backend: str = "auto",
 ) -> ProblemaSenku:
-    """Carga un par dominio + problema PDDL.
-
-    En el contexto de la asignatura, el backend por defecto es siempre
-    `unified_planning`. Si no esta disponible, se cae al parser ligero
-    propio. El parametro `backend` permite forzar uno u otro
-    explicitamente."""
     if backend in {"auto", "unified_planning"}:
         try:
             return carga_con_unified_planning(ruta_dominio, ruta_problema)

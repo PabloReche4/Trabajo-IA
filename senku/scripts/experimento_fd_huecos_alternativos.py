@@ -1,12 +1,4 @@
-"""Prueba Fast Downward sobre V1 y V5 con huecos iniciales alternativos.
-
-Beam search ha demostrado que las variantes 1 (octogono) y 5 (rombo)
-con sus huecos iniciales nominales son dificiles para FD.
-
-Probamos aqui huecos alternativos que el barrido empirico ha clasificado como
-resolubles, con la esperanza de que esos sean mas faciles para FD
-tambien.
-"""
+"""Fast Downward sobre V1 y V5 con huecos iniciales alternativos."""
 
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as PFTimeout
 from pathlib import Path
@@ -54,12 +46,11 @@ def _fd(args):
 
 
 def main(timeout_s: float = 120.0):
-    # Lista de (variante, fichero) a probar
     candidatos = [
-        (1, "variante_1.pddl"),                # Octogono con hueco nominal
-        (1, "variante_1_hueco_0_2.pddl"),      # Octogono con hueco (0,2)
-        (5, "variante_5.pddl"),                # Rombo con hueco nominal
-        (5, "variante_5_hueco_4_2.pddl"),      # Rombo con hueco (4,2)
+        (1, "variante_1.pddl"),
+        (1, "variante_1_hueco_0_2.pddl"),
+        (5, "variante_5.pddl"),
+        (5, "variante_5_hueco_4_2.pddl"),
     ]
     print(f"Probando huecos alternativos para V1 y V5 (timeout {timeout_s}s c/u)\n")
     filas = []
