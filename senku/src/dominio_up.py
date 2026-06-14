@@ -1,4 +1,16 @@
-"""Dominio Senku via unified-planning (estilo Practica 4)."""
+"""Dominio y problemas del Senku con la API Python de unified-planning.
+
+En la Practica 4 se vieron dos formas de definir un problema:
+  (a) leer ficheros PDDL con PDDLReader.parse_problem;
+  (b) construirlo en codigo con Problem, Fluent, UserType e
+      InstantaneousAction (y volcarlo a PDDL con PDDLWriter).
+
+Aqui implementamos (b). La ventaja frente a escribir el PDDL a mano es
+que tenemos validacion sintactica al construirlo y podemos pasarselo
+directamente a Fast Downward (via OneshotPlanner) sin pasar por fichero.
+
+construye_problema_up(tablero) devuelve un Problem listo para resolver.
+"""
 
 from typing import TYPE_CHECKING
 
@@ -19,11 +31,18 @@ if TYPE_CHECKING:  # pragma: no cover
 
 
 def construye_dominio_up() -> "ProblemUP":
+    """Devuelve un Problem con el dominio Senku (predicados + accion).
+
+    No incluye objetos, estado inicial ni meta: es el equivalente al
+    fichero PDDL de dominio, solo la parte comun."""
     dominio = Problem("dominio_senku")
 
+    # Un solo tipo de objeto: Casilla.
     Casilla = UserType("Casilla")
     dominio.user_types.append(Casilla)
 
+    # ocupada/vacia: estado dinamico de cada casilla.
+    # salto: codifica la geometria como hechos estaticos del :init.
     ocupada = Fluent("ocupada", BoolType(), c=Casilla)
     vacia = Fluent("vacia", BoolType(), c=Casilla)
     salto = Fluent(
@@ -32,6 +51,7 @@ def construye_dominio_up() -> "ProblemUP":
     for fluente in (ocupada, vacia, salto):
         dominio.add_fluent(fluente, default_initial_value=False)
 
+    # Accion `mover`: la misma del PDDL hecho a mano.
     mover = InstantaneousAction("mover", desde=Casilla, sobre=Casilla, hasta=Casilla)
     desde = mover.desde
     sobre = mover.sobre
@@ -54,6 +74,10 @@ def construye_dominio_up() -> "ProblemUP":
 
 
 def construye_problema_up(tablero: Tablero) -> "ProblemUP":
+    """Problem completo (dominio + objetos + init + meta) para un Tablero.
+
+    Lo usamos para lanzar Fast Downward directamente sin escribir el
+    PDDL a un fichero."""
     problema = construye_dominio_up().clone()
     problema.name = tablero.nombre
 
@@ -62,12 +86,14 @@ def construye_problema_up(tablero: Tablero) -> "ProblemUP":
     vacia = problema.fluent("vacia")
     salto = problema.fluent("salto")
 
+    # Objetos: una constante por casilla.
     objetos_por_coord = {}
     for coord in sorted(tablero.casillas):
         obj = Object(nombre_casilla(coord), Casilla)
         problema.add_object(obj)
         objetos_por_coord[coord] = obj
 
+    # Estado inicial.
     for coord in tablero.inicial_ocupadas:
         problema.set_initial_value(ocupada(objetos_por_coord[coord]), True)
     for coord in tablero.inicial_vacias:
@@ -82,6 +108,7 @@ def construye_problema_up(tablero: Tablero) -> "ProblemUP":
             True,
         )
 
+    # Meta.
     for coord in tablero.meta_ocupadas:
         problema.add_goal(ocupada(objetos_por_coord[coord]))
     for coord in tablero.meta_vacias:

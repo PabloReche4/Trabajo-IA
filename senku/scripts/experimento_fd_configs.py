@@ -1,4 +1,19 @@
-"""Prueba varias configs de FD sobre las variantes obligatorias."""
+"""Prueba distintas configuraciones de busqueda de Fast Downward sobre
+las variantes obligatorias (V1, V3, V5).
+
+Fast Downward acepta cadenas que describen la combinacion (algoritmo,
+heuristica) a usar. Algunas configuraciones tipicas:
+
+  lazy_greedy([ff()])   - lazy greedy con FF (defecto satisficing)
+  eager_greedy([ff()])  - eager greedy con FF
+  astar(ff())           - A* con FF
+  astar(add())          - A* con h^add
+  astar(hmax())         - A* con h^max (admisible, lento)
+  lazy(alt([single(ff())]))  - lazy con FF en alternancia
+
+Se ejecuta cada variante con varias configuraciones y se reporta la
+primera que encuentra solucion dentro del timeout.
+"""
 
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as PFTimeout
 from pathlib import Path
@@ -49,7 +64,7 @@ def _fd_con_config(args):
 
 def main(timeout_s: float = 120.0):
     configs = [
-        None,
+        None,  # default (lazy-greedy con FF)
         "lazy_greedy([ff()])",
         "eager_greedy([ff()])",
         "astar(add())",
@@ -81,6 +96,8 @@ def main(timeout_s: float = 120.0):
             print(f"  config={label:25s}: {marca:30s} movs={r['movs']:3d} t={r['tiempo_s']:.1f}s")
             filas.append(r)
             if r["estado"].startswith("SOLVED"):
+                # Encontrada una config exitosa para esta variante, pasamos
+                # a la siguiente
                 break
         print()
     destino = (Path(__file__).resolve().parents[1]

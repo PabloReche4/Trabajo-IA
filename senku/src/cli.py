@@ -1,4 +1,22 @@
-"""CLI para resolver problemas de Senku."""
+"""Interfaz de linea de comandos para resolver problemas de Senku.
+
+Uso tipico (desde la raiz del proyecto):
+
+    python -m senku.src.cli resolver \\
+        --dominio senku/pddl/dominio_senku.pddl \\
+        --problema senku/pddl/problemas/variante_3.pddl \\
+        --beta 200 --intentos 5 --relajado
+
+Comandos:
+  resolver  Aplica el algoritmo elegido al par dominio+problema PDDL.
+            Algoritmos:
+              - beam (por defecto): beam search guiado por pagoda
+                (la ampliacion de junio).
+              - beam-iter: beam search iterativo (anchura creciente).
+              - bfs: busqueda en anchura (parte comun).
+              - fd: Fast Downward via unified-planning (linea base).
+  generar   Vuelca los .pddl de las cinco variantes a disco.
+"""
 
 import argparse
 import sys
@@ -58,6 +76,8 @@ def comando_resolver(args: argparse.Namespace) -> int:
     if args.algoritmo == "bfs":
         resultado = busqueda_primero_anchura(problema, limite_nodos=args.limite)
     elif args.algoritmo == "beam-iter":
+        # Variante con anchura creciente: empieza pequena y solo invierte
+        # mas presupuesto si la instancia lo necesita.
         resultado = beam_search_iterativo(
             problema,
             heuristica=h,
@@ -84,6 +104,10 @@ def comando_resolver(args: argparse.Namespace) -> int:
 
 
 def _resuelve_con_fd(args: argparse.Namespace, problema_interno) -> int:
+    """Camino 'fd': delega en Fast Downward via unified-planning.
+
+    Re-carga el problema PDDL en su forma original (el objeto Problem de
+    unified-planning) y se lo pasa a `OneshotPlanner`."""
     from unified_planning.io import PDDLReader
     from .planificador import resuelve_con_fast_downward
 
@@ -123,22 +147,31 @@ def build_parser() -> argparse.ArgumentParser:
     p_resolver.add_argument("--problema", required=True)
     p_resolver.add_argument(
         "--algoritmo", choices=["beam", "beam-iter", "bfs", "fd"], default="beam",
+        help="beam=beam search (junio); beam-iter=beam con beta creciente; "
+             "bfs=parte comun; fd=Fast Downward.",
     )
-    p_resolver.add_argument("--beta", type=int, default=100)
-    p_resolver.add_argument("--intentos", type=int, default=3)
+    p_resolver.add_argument("--beta", type=int, default=100,
+                            help="Anchura del haz para beam search.")
+    p_resolver.add_argument("--intentos", type=int, default=3,
+                            help="Numero de reinicios estocasticos.")
     p_resolver.add_argument(
         "--heuristica", choices=["conectividad", "pagoda"], default="conectividad",
+        help="Heuristica de beam search: conectividad (recomendada) o pagoda.",
     )
     p_resolver.add_argument(
         "--pagoda", choices=["clasica", "uniforme"], default="clasica",
+        help="Asignacion de pesos pagoda (solo si --heuristica pagoda).",
     )
-    p_resolver.add_argument("--limite", type=int, default=None)
-    p_resolver.add_argument("--relajado", action="store_true")
-    p_resolver.add_argument("--sin-visitados", action="store_true")
-    p_resolver.add_argument(
-        "--backend", choices=["auto", "unified_planning", "ligero"], default="auto",
-    )
-    p_resolver.add_argument("--fd-search", default=None)
+    p_resolver.add_argument("--limite", type=int, default=None,
+                            help="Limite de nodos / iteraciones.")
+    p_resolver.add_argument("--relajado", action="store_true",
+                            help="Modo relajado: meta = una sola pieza en cualquier sitio.")
+    p_resolver.add_argument("--sin-visitados", action="store_true",
+                            help="Desactiva la memoria de estados visitados (beam search).")
+    p_resolver.add_argument("--backend", choices=["auto", "unified_planning", "ligero"],
+                            default="auto", help="Parser PDDL a utilizar.")
+    p_resolver.add_argument("--fd-search", default=None,
+                            help="Configuracion de busqueda de Fast Downward, p.ej. 'astar(hmax())'.")
     p_resolver.set_defaults(func=comando_resolver)
 
     p_generar = subparsers.add_parser(
@@ -148,6 +181,7 @@ def build_parser() -> argparse.ArgumentParser:
     p_generar.add_argument(
         "--destino",
         default="senku/pddl/problemas",
+        help="Directorio donde se escriben los ficheros .pddl generados.",
     )
     p_generar.set_defaults(func=comando_generar)
 

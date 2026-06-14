@@ -1,4 +1,23 @@
-"""Estudio de la posicion del hueco inicial en la cruz inglesa (con FD)."""
+"""
+Estudio de distintas posiciones iniciales del hueco en la cruz inglesa.
+
+Este programa genera automaticamente varios problemas de peg solitaire
+sobre el tablero de la cruz inglesa. Para cada casilla candidata se crea
+una configuracion inicial en la que dicha casilla esta vacia y se define
+como objetivo terminar la partida con una unica ficha situada exactamente
+en esa misma posicion.
+
+Cada instancia se modela mediante Unified Planning y se resuelve con el
+planificador Fast Downward. La ejecucion de cada problema se realiza en
+un subproceso independiente con un tiempo maximo de ejecucion para evitar
+bloqueos prolongados.
+
+Los resultados obtenidos para cada posicion incluyen el estado de la
+busqueda, el numero de movimientos del plan encontrado y el tiempo de
+resolucion. Finalmente, toda la informacion se almacena en el archivo:
+
+senku/resultados/estudio_huecos.csv
+"""
 
 from concurrent.futures import ProcessPoolExecutor, TimeoutError as PFTimeout
 from pathlib import Path
@@ -8,16 +27,18 @@ import time
 
 
 def _resuelve_hueco(args):
+    """Construye el problema (hueco en h, meta en h) y lo resuelve con FD."""
     fila, col = args
     from unified_planning.shortcuts import OneshotPlanner, get_environment
     get_environment().credits_stream = None
 
+    # Importacion del paquete del proyecto
     raiz = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(raiz))
     from senku.src.tableros import _tablero, TABLEROS  # noqa
     from senku.src.dominio_up import construye_problema_up
 
-    base = TABLEROS[1]
+    base = TABLEROS[1]  # cruz inglesa
     hueco = (fila, col)
     tablero = _tablero(
         f"cruz_hueco_{fila}_{col}", set(base.casillas), hueco=hueco, objetivo=hueco
@@ -46,9 +67,11 @@ def main(timeout_s: float = 60.0):
     from senku.src.tableros import TABLEROS
 
     base = TABLEROS[1]
+    # Por simetria de la cruz inglesa basta el sector superior-izquierdo,
+    # pero recorremos un subconjunto representativo de posiciones distintas.
     candidatas = sorted({
         c for c in base.casillas
-        if c[0] <= 3 and c[1] <= 3
+        if c[0] <= 3 and c[1] <= 3  # cuadrante representativo
     })
     print(f"Estudio de {len(candidatas)} posiciones del hueco "
           f"(timeout {timeout_s}s c/u)\n")

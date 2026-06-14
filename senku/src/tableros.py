@@ -1,4 +1,21 @@
-"""Tableros del Senku (las 5 variantes de la Figura 3)."""
+"""Definicion de los tableros del Senku.
+
+Cada tablero es un conjunto de coordenadas (fila, columna) con las
+casillas que existen, mas el estado inicial (piezas y hueco) y la meta.
+
+Las cinco variantes salen de la Figura 3 del enunciado. Como la figura
+no fija coordenadas exactas, aqui codificamos cada una con la
+interpretacion que mejor encaja con el dibujo.
+
+  1. Octogono (37 casillas)               -- OBLIGATORIA
+  2. Cruz griega grande (45 casillas)
+  3. Cruz asimetrica (39 casillas)        -- OBLIGATORIA
+  4. Cruz griega clasica / cruz inglesa (33 casillas)
+  5. Rombo / diamante (41 casillas)       -- OBLIGATORIA
+
+Las variantes 1, 3 y 5 son las que pide la convocatoria de junio; la 2
+y la 4 las usamos para experimentacion adicional.
+"""
 
 from dataclasses import dataclass
 from typing import Dict, FrozenSet, Set, Tuple
@@ -9,6 +26,14 @@ Coord = Tuple[int, int]
 
 @dataclass(frozen=True)
 class Tablero:
+    """Descripcion completa de un tablero de Senku.
+
+    - nombre: identificador legible.
+    - casillas: coordenadas (fila, columna) que existen en el tablero.
+    - inicial_ocupadas / inicial_vacias: estado inicial.
+    - meta_ocupadas / meta_vacias: estado objetivo.
+    """
+
     nombre: str
     casillas: FrozenSet[Coord]
     inicial_ocupadas: FrozenSet[Coord]
@@ -17,6 +42,7 @@ class Tablero:
     meta_vacias: FrozenSet[Coord]
 
     def saltos(self):
+        """Ternas (desde, sobre, hasta) consecutivas alineadas (4 direcciones)."""
         for r, c in self.casillas:
             for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
                 sobre = (r + dr, c + dc)
@@ -26,6 +52,7 @@ class Tablero:
 
 
 def _tablero(nombre: str, casillas: Set[Coord], hueco: Coord, objetivo: Coord) -> Tablero:
+    """Construye un tablero con un solo hueco inicial y meta posicional."""
     casillas_fz = frozenset(casillas)
     inicial_ocupadas = casillas_fz - {hueco}
     meta_ocupadas = frozenset({objetivo})
@@ -41,7 +68,23 @@ def _tablero(nombre: str, casillas: Set[Coord], hueco: Coord, objetivo: Coord) -
 
 
 def _octogono() -> Tablero:
-    # Variante 1 (obligatoria): caja 7x7, casillas por fila 3,5,7,7,7,5,3.
+    """Variante 1: tablero octogonal de 37 posiciones (OBLIGATORIA).
+
+            . . .
+          . . . . .
+        . . . . . . .
+        . . . O . . .
+        . . . . . . .
+          . . . . .
+            . . .
+
+    Caja 7x7. Numero de casillas por fila (de arriba abajo):
+    3, 5, 7, 7, 7, 5, 3. Total 37 casillas (36 fichas + 1 hueco).
+    El hueco inicial se situa una fila por encima del centro geometrico
+    del tablero. En coordenadas 0-indexed corresponde a la fila 2,
+    columna 3 (esto es, fila 3 / columna 4 contando desde 1).
+    El centro geometrico (fila 3, col 3 en 0-indexed) si lleva ficha.
+    """
     anchos = [(0, 2, 4), (1, 1, 5), (2, 0, 6),
               (3, 0, 6), (4, 0, 6),
               (5, 1, 5), (6, 2, 4)]
@@ -53,11 +96,29 @@ def _octogono() -> Tablero:
 
 
 def _cruz_griega_grande() -> Tablero:
-    # Variante 2: caja 9x9, casillas por fila 3,3,3,9,9,9,3,3,3.
+    """Variante 2: cruz griega grande de 45 posiciones.
+
+            . . .
+            . . .
+            . . .
+      . . . . . . . . .
+      . . . . O . . . .
+      . . . . . . . . .
+            . . .
+            . . .
+            . . .
+
+    Caja 9x9. Casillas por fila: 3, 3, 3, 9, 9, 9, 3, 3, 3. Total 45
+    casillas. Los brazos verticales ocupan columnas 3, 4 y 5
+    (0-indexed) y los horizontales filas 3, 4 y 5. El hueco inicial
+    esta en el centro exacto (fila 4, col 4 en 0-indexed).
+    """
     casillas: Set[Coord] = set()
+    # Brazos horizontales (filas 3, 4, 5): toda la anchura
     for r in range(3, 6):
         for c in range(9):
             casillas.add((r, c))
+    # Brazos verticales (columnas 3, 4, 5): toda la altura
     for c in range(3, 6):
         for r in range(9):
             casillas.add((r, c))
@@ -66,12 +127,37 @@ def _cruz_griega_grande() -> Tablero:
 
 
 def _cruz_asimetrica() -> Tablero:
-    # Variante 3 (obligatoria): caja 8x8, brazo vertical en cols 2-4,
-    # brazo horizontal en filas 3-5.
+    """Variante 3: cruz asimetrica de 39 posiciones (OBLIGATORIA).
+
+            . . .
+            . . .
+            . . .
+      . . . . . . . .
+      . . . . O . . .
+      . . . . . . . .
+            . . .
+            . . .
+
+    Caja 8x8. Casillas por fila: 3, 3, 3, 8, 8, 8, 3, 3.
+    Total 39 casillas (38 fichas + 1 hueco).
+
+    Es una cruz NO simetrica:
+      - Brazo vertical: columnas 2, 3, 4 (0-indexed).
+      - Brazo horizontal: filas 3, 4, 5 (0-indexed).
+      - Quedan 2 casillas a la izquierda del brazo vertical (cols 0, 1)
+        y 3 a la derecha (cols 5, 6, 7).
+      - 3 filas por encima del brazo horizontal (filas 0, 1, 2) frente
+        a 2 por debajo (filas 6, 7).
+
+    Hueco inicial: fila 4, col 3 en 0-indexed (= fila 5, col 4 en
+    1-indexed segun el enunciado).
+    """
     casillas: Set[Coord] = set()
+    # Brazo vertical (cols 2, 3, 4 ocupan TODAS las filas 0..7)
     for r in range(8):
         for c in range(2, 5):
             casillas.add((r, c))
+    # Brazo horizontal (filas 3, 4, 5 ocupan TODAS las columnas 0..7)
     for r in range(3, 6):
         for c in range(8):
             casillas.add((r, c))
@@ -80,7 +166,21 @@ def _cruz_asimetrica() -> Tablero:
 
 
 def _cruz_griega_clasica() -> Tablero:
-    # Variante 4: Senku clasico ingles, 33 casillas.
+    """Variante 4: cruz griega clasica (Senku ingles) de 33 posiciones.
+
+            . . .
+            . . .
+        . . . . . . .
+        . . . O . . .
+        . . . . . . .
+            . . .
+            . . .
+
+    Caja 7x7. Casillas por fila: 3, 3, 7, 7, 7, 3, 3.
+    Total 33 casillas (32 fichas + 1 hueco). Hueco en el centro
+    exacto (fila 3, col 3 en 0-indexed). Es el tablero canonico del
+    Senku occidental, ampliamente estudiado en la literatura clasica.
+    """
     casillas = {
         (r, c)
         for r in range(7)
@@ -92,7 +192,24 @@ def _cruz_griega_clasica() -> Tablero:
 
 
 def _rombo() -> Tablero:
-    # Variante 5 (obligatoria): rombo definido por |r-4| + |c-4| <= 4.
+    """Variante 5: rombo / diamante de 41 posiciones (OBLIGATORIA).
+
+              .
+            . . .
+          . . . . .
+        . . . . . . .
+      . . . . O . . . .
+        . . . . . . .
+          . . . . .
+            . . .
+              .
+
+    Caja 9x9. Casillas por fila: 1, 3, 5, 7, 9, 7, 5, 3, 1.
+    Total 41 casillas (40 fichas + 1 hueco). Se construye a partir de
+    la distancia de Manhattan al centro (|r-4| + |c-4| <= 4 en
+    0-indexed). Hueco inicial en el centro exacto (fila 4, col 4 en
+    0-indexed).
+    """
     casillas = {(r, c) for r in range(9) for c in range(9)
                 if abs(r - 4) + abs(c - 4) <= 4}
     return _tablero("variante_5_rombo", casillas,
@@ -108,21 +225,25 @@ TABLEROS: Dict[int, Tablero] = {
 }
 
 
+# Variantes que pide la convocatoria de junio.
 VARIANTES_OBLIGATORIAS = (1, 3, 5)
 
 
 def obtener_tablero(numero: int) -> Tablero:
+    """Devuelve la variante 1..5."""
     if numero not in TABLEROS:
         raise ValueError(f"Variante {numero} no definida. Usa 1..5.")
     return TABLEROS[numero]
 
 
 def nombre_casilla(coord: Coord) -> str:
+    """Identificador PDDL de una casilla, p.ej. (2,3) -> p_2_3."""
     r, c = coord
     return f"p_{r}_{c}"
 
 
 def dibuja_tablero(tablero: Tablero, ocupadas: FrozenSet[Coord]) -> str:
+    """Imprime el tablero: 'o' = ocupada, '.' = hueco, ' ' = no existe."""
     if not tablero.casillas:
         return ""
     filas = {r for r, _ in tablero.casillas}

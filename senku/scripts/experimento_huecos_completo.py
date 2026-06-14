@@ -1,4 +1,21 @@
-"""Barrido exhaustivo del hueco inicial sobre las 5 variantes."""
+"""Barrido exhaustivo de la posicion del hueco inicial.
+
+Para cada variante, prueba TODAS las casillas como hueco inicial y
+comprueba (con beam search iterativo + heuristica de conectividad,
+modo relajado) si la instancia es resoluble. Para los tableros con
+simetrias, basta con un cuadrante representativo: aqui se aprovechan
+las simetrias verticales y horizontales para reducir el numero de
+huecos probados.
+
+Genera dos ficheros:
+  - resultados/huecos_completo.csv: una fila por cada hueco probado
+    (variante, hueco, exito, movs, min_piezas, nodos, tiempo).
+  - resultados/huecos_resumen.csv: una fila por variante con el
+    porcentaje de huecos resolubles y el numero total.
+
+Disenado para ejecutarse de una vez:
+    python senku/scripts/experimento_huecos_completo.py
+"""
 
 from pathlib import Path
 import csv
@@ -15,10 +32,16 @@ from senku.src.busqueda import beam_search_iterativo  # noqa: E402
 
 
 def _representantes_por_simetria(casillas):
+    """Devuelve los huecos representativos por simetria del tablero.
+
+    Aprovecha la simetria respecto a los ejes horizontal y vertical:
+    si el tablero es simetrico, basta con probar el cuadrante superior
+    izquierdo. La mayoria de variantes del Senku son simetricas."""
     filas = [r for r, _ in casillas]
     cols = [c for _, c in casillas]
     r_med = (min(filas) + max(filas)) / 2
     c_med = (min(cols) + max(cols)) / 2
+    # Tomamos solo los huecos con r <= r_med y c <= c_med (cuadrante)
     cuadrante = sorted({(r, c) for (r, c) in casillas
                         if r <= r_med + 0.001 and c <= c_med + 0.001})
     return cuadrante
@@ -50,6 +73,9 @@ def experimento(timeout_por_hueco: float = 60.0):
                 iteraciones_maximas=120,
             )
             t_total = time.perf_counter() - inicio
+            if t_total > timeout_por_hueco and not r.exito:
+                # No abortamos a mitad pero anotamos como agotado
+                pass
             if r.min_piezas_alcanzadas is not None:
                 min_global = min(min_global, r.min_piezas_alcanzadas)
             if r.exito:

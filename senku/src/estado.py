@@ -1,4 +1,11 @@
-"""Representacion de estados del Senku."""
+"""Representacion de estados del Senku y motor de transiciones.
+
+Un estado es un frozenset con las coordenadas de las casillas ocupadas.
+El conjunto de casillas y la lista de saltos validos se sacan del
+tablero. Usar frozensets nos permite usar los estados como claves de
+diccionario (visitados, padres...) y comparar igualdad en O(1)
+amortizado.
+"""
 
 from dataclasses import dataclass, field
 from typing import FrozenSet, Iterable, List, Optional, Tuple
@@ -7,11 +14,24 @@ from .tableros import Coord, Tablero
 
 
 Estado = FrozenSet[Coord]
-Movimiento = Tuple[Coord, Coord, Coord]
+Movimiento = Tuple[Coord, Coord, Coord]  # (desde, sobre, hasta)
 
 
 @dataclass(frozen=True)
 class ProblemaSenku:
+    """Tablero + estado inicial + meta. Es lo que consumen las busquedas.
+
+    Se construye desde un Tablero (`desde_tablero`) o desde un par de
+    ficheros PDDL (ver lector_pddl.py).
+
+    modo_relajado:
+      - False (estricto): hay que dejar las casillas en `meta_ocupadas`
+        ocupadas y las de `meta_vacias` vacias. Es la meta clasica.
+      - True (relajado): basta con que quede una unica pieza en
+        cualquier sitio del tablero. Es la version del enunciado tras
+        la aclaracion del profesor.
+    """
+
     tablero: Tablero
     inicial: Estado
     meta_ocupadas: Estado
@@ -40,6 +60,7 @@ class ProblemaSenku:
         return True
 
     def sucesores(self, estado: Estado) -> Iterable[Tuple[Movimiento, Estado]]:
+        """Genera (movimiento, nuevo_estado) para cada salto aplicable."""
         for desde, sobre, hasta in self.saltos:
             if desde in estado and sobre in estado and hasta not in estado:
                 nuevo = (estado - {desde, sobre}) | {hasta}
@@ -49,6 +70,11 @@ class ProblemaSenku:
 def reconstruye_camino(
     padres: dict, estado_final: Estado
 ) -> Tuple[List[Estado], List[Movimiento]]:
+    """Recompone la secuencia de estados y movimientos hacia atras.
+
+    `padres[estado]` es (movimiento, estado_padre), o None para el
+    estado inicial.
+    """
     estados: List[Estado] = [estado_final]
     movimientos: List[Movimiento] = []
     actual = estado_final
